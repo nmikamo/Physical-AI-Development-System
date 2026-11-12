@@ -11,6 +11,7 @@ if [ ! -d "$APP_DIR/.venv" ]; then
 fi
 
 "$APP_DIR/.venv/bin/pip" install --upgrade pip
+"$APP_DIR/.venv/bin/pip" install torch --index-url https://download.pytorch.org/whl/cpu
 "$APP_DIR/.venv/bin/pip" install -r "$APP_DIR/requirements.txt"
 "$APP_DIR/.venv/bin/pip" install --no-deps -e "$APP_DIR"
 
