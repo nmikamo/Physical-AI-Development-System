@@ -35,9 +35,10 @@ class ActorNetwork(nn.Module):
         self.log_std = nn.Parameter(torch.full((act_dim,), -1.2))
 
     def forward(self, obs: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        h = self.net(obs)
-        mean = torch.tanh(self.mean_head(h))
-        std = torch.exp(torch.clamp(self.log_std, -4.0, 0.5))
+        safe_obs = torch.nan_to_num(obs, nan=0.0, posinf=5.0, neginf=-5.0)
+        h = self.net(safe_obs)
+        mean = torch.nan_to_num(1.35 * torch.tanh(self.mean_head(h)), nan=0.0)
+        std = torch.exp(torch.clamp(torch.nan_to_num(self.log_std, nan=-1.2), -4.0, 0.5))
         return mean, std
 
     def log_prob(self, obs: torch.Tensor, act: torch.Tensor) -> torch.Tensor:

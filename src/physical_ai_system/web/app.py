@@ -12,7 +12,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from physical_ai_system.adapters.bedrock_client import BedrockAdvisorClient
 from physical_ai_system.adapters.mujoco_engine import (
     DEFAULT_HUMANOID_XML,
-    generate_sample_biped_walk_mocap,
+    list_builtin_mocaps,
 )
 from physical_ai_system.adapters.s3_store import S3Store
 from physical_ai_system.config import AppConfig, load_config
@@ -64,7 +64,7 @@ class AdvisorRetrainRequest(BaseModel):
     bc_weight: float = Field(default=1.0, ge=0.0, le=5.0)
     entropy_coef: float = Field(default=0.01, ge=0.0, le=0.5)
     smoothness_weight: float = Field(default=0.06, ge=0.0, le=1.0)
-    reward_tracking_weight: float = Field(default=1.1, ge=0.1, le=5.0)
+    reward_tracking_weight: float = Field(default=1.2, ge=0.1, le=5.0)
     auto_start: bool = Field(default=False)
 
 
@@ -76,7 +76,7 @@ class TrainStartRequest(BaseModel):
     bc_weight: float = Field(default=1.0, ge=0.0, le=5.0)
     entropy_coef: float = Field(default=0.01, ge=0.0, le=0.5)
     smoothness_weight: float = Field(default=0.06, ge=0.0, le=1.0)
-    reward_tracking_weight: float = Field(default=1.1, ge=0.1, le=5.0)
+    reward_tracking_weight: float = Field(default=1.2, ge=0.1, le=5.0)
     robot_xml_name: str = Field(default="humanoid_default.xml")
     instruction_note: str = Field(default="")
 
@@ -92,11 +92,10 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Physical AI Development System",
-        version="0.1.0",
+        version="0.2.0",
     )
     app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
-    # Background job registry (isolated I/O state)
     jobs_lock = threading.Lock()
     jobs_state: dict[str, dict[str, Any]] = {}
 
@@ -106,16 +105,16 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
             jobs_state[job_id] = {**prev, **patch}
 
     def _list_mocaps() -> list[dict[str, Any]]:
-        sample = generate_sample_biped_walk_mocap()
-        items: dict[str, dict[str, Any]] = {
-            sample.mocap_id: {
-                "mocap_id": sample.mocap_id,
-                "name": sample.name,
+        items: dict[str, dict[str, Any]] = {}
+        for preset in list_builtin_mocaps():
+            items[preset.mocap_id] = {
+                "mocap_id": preset.mocap_id,
+                "name": preset.name,
                 "source_format": "builtin",
-                "fps": sample.fps,
-                "frames": sample.num_frames,
+                "fps": preset.fps,
+                "frames": preset.num_frames,
+                "joints": preset.num_joints,
             }
-        }
         for k in s3.list_keys("mocap/"):
             if k.endswith("/meta.json"):
                 meta = s3.get_json(k)
@@ -129,17 +128,24 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
             if k.endswith("/report.json"):
                 data = s3.get_json(k)
                 if data:
+                    hist = data.get("metrics_history") or []
+                    last_m = hist[-1] if hist else {}
+                    diag = data.get("diagnostics") or {}
                     reports.append(
                         {
                             "run_id": data.get("run_id"),
                             "created_at": data.get("created_at"),
                             "method": data.get("config", {}).get("method"),
                             "mocap_id": data.get("config", {}).get("mocap_id"),
-                            "success_rate": (
-                                data["metrics_history"][-1]["task_success_rate"]
-                                if data.get("metrics_history")
-                                else 0.0
-                            ),
+                            "epochs": data.get("config", {}).get("epochs", len(hist)),
+                            "success_rate": last_m.get("task_success_rate", 0.0),
+                            "train_loss": last_m.get("train_loss", 0.0),
+                            "val_loss": last_m.get("val_loss", 0.0),
+                            "mean_return": last_m.get("mean_return", 0.0),
+                            "tracking_score": diag.get("tracking_score", 0.0),
+                            "smoothness_score": diag.get("smoothness_score", 0.0),
+                            "overfitting_detected": diag.get("overfitting_detected", False),
+                            "instruction_note": data.get("config", {}).get("instruction_note", ""),
                             "report_s3_key": k,
                         }
                     )
@@ -177,7 +183,7 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
                             "total": total,
                             "message": (
                                 f"Epoch {ep}/{total} | TrainLoss={metric.train_loss:.4f} "
-                                f"| Success={metric.task_success_rate*100:.1f}%"
+                                f"| ValLoss={metric.val_loss:.4f} | 成功率={metric.task_success_rate*100:.1f}%"
                             ),
                         },
                     )
@@ -235,7 +241,7 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
             "aws_region": cfg.aws_region,
             "default_keywords": list(cfg.default_keywords),
             "text_mining": snapshot,
-            "papers": papers[:200],
+            "papers": papers[:250],
             "mocaps": _list_mocaps(),
             "reports": _list_reports(),
             "latest_report": latest_report,
@@ -251,9 +257,9 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
                 "job_id": job_id,
                 "type": "scrape",
                 "status": "running",
-                "progress": 0,
+                "progress": 10,
                 "total": 100,
-                "message": "alphaXivからレートリミット遵守で論文を取得・テキストマイニング中...",
+                "message": "alphaXivからレートリミット遵守（2秒間隔）で論文を取得・テキストマイニング中...",
             },
         )
 
@@ -272,7 +278,7 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
                         "status": "completed",
                         "progress": 100,
                         "total": 100,
-                        "message": f"完了: {snap.total_papers}件の論文を分析・要約しS3へ保存しました。",
+                        "message": f"完了: 全{snap.total_papers}件（Sim-to-Real {snap.sim_to_real_count}件）を分析・要約しS3へ保存しました。",
                         "result": snap.to_dict(),
                     },
                 )
@@ -393,6 +399,7 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
         return {
             "reply": reply,
             "engine": engine,
+            "previous_config": base_cfg.to_dict(),
             "updated_config": updated_cfg.to_dict(),
             "job_id": job_id,
         }
@@ -432,11 +439,15 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
         return data
 
     @app.get("/api/runs/{run_id}/video")
-    async def get_run_video(run_id: str) -> Response:
-        data = s3.get_bytes(f"report/{run_id}/evaluation.mp4")
-        if not data:
+    async def get_run_video(run_id: str) -> FileResponse:
+        local_path = s3.ensure_local_file(f"report/{run_id}/evaluation.mp4")
+        if not local_path:
             raise HTTPException(status_code=404, detail="Video not found")
-        return Response(content=data, media_type="video/mp4")
+        return FileResponse(
+            path=str(local_path),
+            media_type="video/mp4",
+            filename=f"{run_id}_evaluation.mp4",
+        )
 
     @app.get("/api/runs/{run_id}/frames")
     async def get_run_frames(run_id: str) -> JSONResponse:

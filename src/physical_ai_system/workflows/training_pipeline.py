@@ -8,6 +8,7 @@ from typing import Callable
 from physical_ai_system.adapters.mujoco_engine import (
     DEFAULT_HUMANOID_XML,
     generate_sample_biped_walk_mocap,
+    list_builtin_mocaps,
     parse_mocap_bytes,
     run_imitation_and_rl_training,
 )
@@ -21,28 +22,18 @@ from physical_ai_system.domain.models import (
 
 
 def load_or_create_mocap(s3: S3Store, mocap_id: str) -> MocapTrajectory:
-    """Load uploaded mocap trajectory from S3 mocap/ or synthesize default sample."""
+    """Load uploaded mocap trajectory from S3 mocap/ or synthesize requested preset."""
+    for preset in list_builtin_mocaps():
+        if mocap_id == preset.mocap_id:
+            return preset
+
     meta = s3.get_json(f"mocap/{mocap_id}/meta.json")
     if meta and "filename" in meta:
         raw = s3.get_bytes(f"mocap/{mocap_id}/{meta['filename']}")
         if raw:
             return parse_mocap_bytes(meta["filename"], raw, mocap_id=mocap_id)
 
-    sample = generate_sample_biped_walk_mocap()
-    if mocap_id == sample.mocap_id:
-        # Persist sample metadata once so it shows up cleanly in S3 mocap/
-        s3.put_json(
-            f"mocap/{sample.mocap_id}/meta.json",
-            {
-                "mocap_id": sample.mocap_id,
-                "name": sample.name,
-                "filename": "sample_biped_walk.csv",
-                "fps": sample.fps,
-                "frames": sample.num_frames,
-                "joints": sample.num_joints,
-            },
-        )
-    return sample
+    return generate_sample_biped_walk_mocap()
 
 
 def save_uploaded_mocap(

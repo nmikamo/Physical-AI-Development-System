@@ -5,6 +5,7 @@ from physical_ai_system.domain.text_mining import (
     aggregate_monthly_counts,
     build_text_mining_snapshot,
     detect_sim_to_real,
+    is_humanoid_or_physical_ai_paper,
 )
 
 
@@ -73,6 +74,8 @@ def test_build_text_mining_snapshot() -> None:
     assert snap.total_papers == 4
     assert snap.sim_to_real_count == 2
     assert len(snap.points) == 4
-    assert len(snap.density_grid.x_grid) == 48
-    assert len(snap.density_grid.z_matrix) == 48
+    assert len(snap.density_grid.x_grid) == 56
+    assert len(snap.density_grid.z_matrix) == 56
     assert all(pt.url.startswith("https://www.alphaxiv.org/abs/") for pt in snap.points)
+    assert is_humanoid_or_physical_ai_paper("Humanoid Locomotion", "Bipedal robot in MuJoCo")
+    assert not is_humanoid_or_physical_ai_paper("Self-Evolving Autonomous GIS", "Geographic systems")

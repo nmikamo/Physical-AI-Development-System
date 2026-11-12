@@ -106,6 +106,14 @@ class S3Store:
         except (BotoCoreError, ClientError):
             return None
 
+    def ensure_local_file(self, key: str) -> Path | None:
+        """Ensure object exists on local disk for FileResponse HTTP Range streaming."""
+        local = self._local_path(key)
+        if local.exists() and local.stat().st_size > 0:
+            return local
+        data = self.get_bytes(key)
+        return local if data else None
+
     def list_keys(self, prefix: str) -> tuple[str, ...]:
         """List keys from S3 merged with local cache keys."""
         keys: set[str] = set()

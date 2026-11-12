@@ -10,7 +10,7 @@ RLMethod = Literal["DAPG", "RLPD", "AWAC"]
 
 @dataclass(frozen=True)
 class PaperRecord:
-    """Single scraped academic paper with alphaxiv/arXiv metadata and summary."""
+    """Single scraped academic paper with alphaXiv/arXiv metadata and summary."""
 
     paper_id: str
     title: str
@@ -53,6 +53,9 @@ class TextMiningPoint:
     title: str
     url: str
     month_key: str
+    published_at: str
+    authors: tuple[str, ...]
+    keywords_matched: tuple[str, ...]
     x: float
     y: float
     cluster_id: int
@@ -119,7 +122,14 @@ class MonthlyTextMiningSnapshot:
                 }
                 for c in self.clusters
             ],
-            "points": [asdict(p) for p in self.points],
+            "points": [
+                {
+                    **asdict(p),
+                    "authors": list(p.authors),
+                    "keywords_matched": list(p.keywords_matched),
+                }
+                for p in self.points
+            ],
             "density_grid": {
                 "x_grid": list(self.density_grid.x_grid),
                 "y_grid": list(self.density_grid.y_grid),
@@ -137,8 +147,8 @@ class MocapTrajectory:
     source_format: str
     fps: float
     joint_names: tuple[str, ...]
-    joint_positions: tuple[tuple[float, ...], ...]  # shape: (T, num_joints)
-    root_positions: tuple[tuple[float, float, float], ...]  # shape: (T, 3)
+    joint_positions: tuple[tuple[float, ...], ...]
+    root_positions: tuple[tuple[float, float, float], ...]
 
     @property
     def num_frames(self) -> int:
@@ -161,8 +171,8 @@ class TrainingConfig:
     learning_rate: float = 3e-4
     bc_weight: float = 1.0
     entropy_coef: float = 0.01
-    smoothness_weight: float = 0.05
-    reward_tracking_weight: float = 1.0
+    smoothness_weight: float = 0.06
+    reward_tracking_weight: float = 1.2
     seed: int = 42
     robot_xml_name: str = "humanoid_default.xml"
     instruction_note: str = ""
@@ -173,7 +183,7 @@ class TrainingConfig:
 
 @dataclass(frozen=True)
 class EpochMetrics:
-    """Single epoch metrics for Train Loss, Validation Loss, and Task Success Rate."""
+    """Single epoch metrics for Train Loss, Validation Loss, Task Success Rate, and Return."""
 
     epoch: int
     train_loss: float
@@ -182,6 +192,7 @@ class EpochMetrics:
     mean_return: float
     tracking_error: float
     jerk_smoothness: float
+    survival_steps: int = 100
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

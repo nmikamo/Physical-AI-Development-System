@@ -10,16 +10,25 @@ from physical_ai_system.adapters.bedrock_client import BedrockAdvisorClient
 from physical_ai_system.adapters.s3_store import S3Store
 from physical_ai_system.config import AppConfig
 from physical_ai_system.domain.models import MonthlyTextMiningSnapshot, PaperRecord
-from physical_ai_system.domain.text_mining import build_text_mining_snapshot
+from physical_ai_system.domain.text_mining import (
+    build_text_mining_snapshot,
+    is_humanoid_or_physical_ai_paper,
+)
 
 
 def merge_papers_pure(
     existing: Sequence[PaperRecord],
     incoming: Sequence[PaperRecord],
 ) -> tuple[PaperRecord, ...]:
-    """Pure deduplication preserving existing summaries and updating metadata."""
-    merged: dict[str, PaperRecord] = {p.paper_id: p for p in existing}
+    """Pure deduplication preserving valid robotics papers and updating metadata."""
+    merged: dict[str, PaperRecord] = {
+        p.paper_id: p
+        for p in existing
+        if is_humanoid_or_physical_ai_paper(p.title, p.abstract)
+    }
     for p in incoming:
+        if not is_humanoid_or_physical_ai_paper(p.title, p.abstract):
+            continue
         prev = merged.get(p.paper_id)
         if prev and prev.summary_ja and not p.summary_ja:
             from dataclasses import replace
@@ -45,11 +54,9 @@ def run_monthly_paper_pipeline(
     """Orchestrate rate-limited alphaXiv scrape -> summarize -> text mine -> save to S3."""
     active_keywords = tuple(keywords) if keywords else config.default_keywords
 
-    # 1. Load existing paper catalog from S3 (if any) for monthly cumulative analysis
     existing_raw = s3.get_json("papers/catalog.json") or []
     existing_papers = tuple(PaperRecord.from_dict(item) for item in existing_raw)
 
-    # 2. Polite rate-limited scraping (time.sleep >= 2.0s per request)
     scraped = scrape_alphaxiv_papers(
         keywords=active_keywords,
         base_url=config.alphaxiv_base_url,
@@ -57,14 +64,10 @@ def run_monthly_paper_pipeline(
         max_per_keyword=max_per_keyword,
     )
 
-    # 3. Merge & summarize new papers via Amazon Bedrock
     merged = merge_papers_pure(existing_papers, scraped)
     summarized = bedrock.summarize_batch(merged)
-
-    # 4. Pure text mining + 2D density cluster map + monthly aggregation
     snapshot = build_text_mining_snapshot(summarized, active_keywords)
 
-    # 5. Persist papers, summaries, and monthly text mining snapshot to S3
     month_tag = datetime.now(timezone.utc).strftime("%Y-%m")
     papers_payload = [p.to_dict() for p in summarized]
     s3.put_json("papers/catalog.json", papers_payload)
