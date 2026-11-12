@@ -1,0 +1,20 @@
+[Unit]
+Description=Physical AI Development System Web App (FastAPI)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/physical-ai-system
+Environment="PATH=/opt/physical-ai-system/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/opt/physical-ai-system/src"
+Environment="MUJOCO_GL=osmesa"
+Environment="AWS_REGION=ap-northeast-3"
+Environment="S3_BUCKET=physical-ai-development-system-bucket"
+Environment="LOCAL_DATA_DIR=/opt/physical-ai-system/local_data"
+ExecStart=/opt/physical-ai-system/.venv/bin/uvicorn physical_ai_system.web.app:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
