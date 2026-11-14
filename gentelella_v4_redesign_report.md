@@ -34,3 +34,13 @@
 - **Papers & Mining**: `/api/papers/scrape` + `/api/jobs/{job_id}` ポーリング、クラスタ/年度/Sim2Real/キーワード検索フィルタ、ECharts 6 2D散布図クリックでの日本語要約・alphaXivリンク表示を統合。
 - **AI Advisor & Training**: `/api/advisor/ask`（推奨設定のワンクリック適用）、`/api/mocap/upload`、`/api/robot-xml/upload`、`/api/training/start` + ジョブ進捗バーを統合。
 - **Evaluation & 3D**: `/api/runs/{run_id}/report`, `/api/runs/{run_id}/video` (MP4再生), `/api/runs/{run_id}/frames` (Three.js Policy/Reference骨格比較再生), `/api/advisor/retrain` (AI調整案確認・自動再学習) を統合。
+
+## 6. 本番 EC2 デプロイ＆稼働検証 (2026-11-15)
+- **デプロイ先**: AWS 大阪リージョン (`ap-northeast-3`) EC2 `i-03b69f02834e3c1fa` (`http://13.208.128.87/`)
+- **テスト結果**: EC2 上で `/opt/physical-ai-system/.venv/bin/pytest -v` を実行し、`10 passed` を確認。
+- **稼働確認**:
+  - `systemctl is-active physical-ai.service`: `active`
+  - `GET http://13.208.128.87/api/health`: `200 OK`
+  - `GET http://13.208.128.87/`: `200 OK`（`Gentelella v4` / `echarts@6` 配信確認）
+  - `GET http://13.208.128.87/static/css/gentelella-v4.css`: `200 OK` (`156795` bytes)
+  - `GET http://13.208.128.87/static/js/app.js`: `200 OK` (`50261` bytes)
