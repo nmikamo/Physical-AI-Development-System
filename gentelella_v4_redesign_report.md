@@ -28,3 +28,9 @@
 1. **Papers & Mining 統合**: `/api/dashboard-init`・`/api/papers/scrape` と接続し、ECharts 6 散布図・年度別トレンド・論文テーブルを実データ化。
 2. **Training & Advisor 統合**: `/api/advisor/ask`・`/api/train/start`・ジョブ進捗ポーリングを接続。
 3. **Evaluation & 3D 統合**: `/api/jobs/{job_id}/video`（MP4再生）および実フレームJSONでの Three.js 骨格再生・実損失カーブ描画を接続。
+
+## 5. 全画面バックエンド API 統合完了 (2026-11-14)
+- **Dashboard**: `/api/dashboard-init` から取得した論文総数・Sim2Real件数・最新成功率・保存済みRun一覧・アルゴリズム比率を実データ描画。Run行クリックで `Evaluation & 3D` へ遷移。
+- **Papers & Mining**: `/api/papers/scrape` + `/api/jobs/{job_id}` ポーリング、クラスタ/年度/Sim2Real/キーワード検索フィルタ、ECharts 6 2D散布図クリックでの日本語要約・alphaXivリンク表示を統合。
+- **AI Advisor & Training**: `/api/advisor/ask`（推奨設定のワンクリック適用）、`/api/mocap/upload`、`/api/robot-xml/upload`、`/api/training/start` + ジョブ進捗バーを統合。
+- **Evaluation & 3D**: `/api/runs/{run_id}/report`, `/api/runs/{run_id}/video` (MP4再生), `/api/runs/{run_id}/frames` (Three.js Policy/Reference骨格比較再生), `/api/advisor/retrain` (AI調整案確認・自動再学習) を統合。
