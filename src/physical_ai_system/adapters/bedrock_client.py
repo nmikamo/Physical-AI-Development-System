@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Sequence
 
 import boto3
@@ -62,42 +63,39 @@ _TECH_RULES: tuple[tuple[tuple[str, ...], str, str], ...] = (
 
 
 def summarize_paper_extractive_fallback(paper: PaperRecord) -> str:
-    """Pure deterministic Japanese technical summary builder when Bedrock is unavailable."""
-    blob = f"{paper.title} {paper.abstract}".lower()
+    """Pure deterministic extractor when Bedrock summary is not generated.
 
-    matched_methods: list[str] = []
-    matched_impacts: list[str] = []
-    for keywords, method_ja, impact_ja in _TECH_RULES:
-        if any(k in blob for k in keywords):
-            matched_methods.append(method_ja)
-            matched_impacts.append(impact_ja)
+    Explicitly indicates that AI summary is pending and extracts original abstract
+    sentences without hallucinating or reusing identical boilerplate templates.
+    """
+    abstract_clean = " ".join(paper.abstract.strip().split())
+    sentences = [s.strip() for s in re.split(r"(?<=\.)\s+", abstract_clean) if s.strip()]
 
-    if not matched_methods:
-        matched_methods.append(
-            "2足歩行ヒューマノイドおよびフィジカルAIにおける全身運動制御・強化学習アルゴリズムを提案。"
-        )
-        matched_impacts.append(
-            "シミュレーションおよび実機環境における動作安定性と汎化性能を検証。"
-        )
+    # Extract first sentence as primary objective/scope
+    first_sentence = sentences[0] if sentences else paper.title
+    # Extract concluding sentence if available
+    conclusion = sentences[-1] if len(sentences) > 1 else ""
 
     sim_note = (
-        "ドメインランダマイゼーションやシステム同定を通じた Sim-to-Real 実機転移の有効性を確認。"
+        "実機転移（Sim-to-Real）関連の記述が原文アブストラクトに含まれています。"
         if paper.sim_to_real
-        else "シミュレーション環境（MuJoCo / Isaac Gym 等）での定量評価を中心に有効性を検証。"
+        else "シミュレーション環境での検証を主体とする研究です。"
     )
-
-    abstract_clean = " ".join(paper.abstract.strip().split())
-    sentences = [s.strip() for s in abstract_clean.split(". ") if s.strip()]
-    en_lead = (sentences[0] + ".") if sentences else paper.title
 
     kw_str = ", ".join(paper.keywords_matched) if paper.keywords_matched else "humanoid, physical AI"
-    return (
-        f"【研究目的・手法】{matched_methods[0]}\n"
-        f"【技術的成果】{matched_impacts[0]}\n"
-        f"【Sim-to-Real・応用示唆】{sim_note}\n"
-        f"【キーワード】{kw_str}\n"
-        f"【原文要旨（抜粋）】{en_lead}"
-    )
+
+    lines = [
+        "【要約ステータス】AI要約未生成（原文抄録を表示中）",
+        f"【研究の主眼】{first_sentence}",
+    ]
+    if conclusion and conclusion != first_sentence:
+        lines.append(f"【結言・成果】{conclusion}")
+    lines.extend([
+        f"【Sim-to-Real分類】{sim_note}",
+        f"【該当キーワード】{kw_str}",
+        f"【原文抄録】{abstract_clean}",
+    ])
+    return "\n".join(lines)
 
 
 class BedrockAdvisorClient:
@@ -158,8 +156,12 @@ class BedrockAdvisorClient:
 
         results: list[PaperRecord] = []
         for p in papers:
-            # Refresh if empty or older unstructured summary
-            if p.summary_ja.strip() and "【研究目的・手法】" in p.summary_ja:
+            # Retain if already populated with structured or extracted summary
+            if p.summary_ja.strip() and (
+                "【研究目的・手法】" in p.summary_ja
+                or "【要約ステータス】" in p.summary_ja
+                or "【研究の主眼】" in p.summary_ja
+            ):
                 results.append(p)
             else:
                 summary = self.summarize_paper(p)

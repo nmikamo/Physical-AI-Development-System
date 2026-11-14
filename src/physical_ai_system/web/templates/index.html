@@ -10,416 +10,617 @@
   <script src="/static/js/app.js" defer></script>
 </head>
 <body>
+  <!-- Header with Brand, Live Status & Collapsible System Information -->
   <header class="topbar">
     <div class="brand">
-      <div class="brand-badge">PAI</div>
+      <div class="brand-badge" aria-hidden="true">PAI</div>
       <div>
         <h1>Physical AI Development System</h1>
-        <p class="subtitle">2足歩行人型ロボット 模倣学習・強化学習 (DAPG / RLPD / AWAC)・MuJoCo動作確認・alphaXivテキストマイニング</p>
+        <p class="subtitle">2足歩行人型ロボット 模倣学習・強化学習・動作確認・論文調査</p>
       </div>
     </div>
-    <div class="aws-meta">
-      <span class="pill">AWS Region: {{ aws_region }}</span>
-      <span class="pill pill-s3">S3: {{ s3_bucket }}</span>
-      <span class="pill pill-ok" id="healthStatus">System Online</span>
+    <div class="header-right">
+      <div class="status-indicator">
+        <span class="status-dot status-unknown" id="healthDot" aria-hidden="true"></span>
+        <span class="status-text" id="healthStatus" aria-live="polite">接続確認中...</span>
+      </div>
+      <button id="btnSystemInfoToggle" class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="systemInfoDrawer">
+        ℹ システム情報
+      </button>
     </div>
   </header>
 
-  <!-- Main Navigation Tabs + Guided 4-Step Workflow Bar -->
-  <div class="nav-shell">
-    <nav class="tabs" role="tablist">
-      <button class="tab-btn active" data-tab="papers">
-        <span class="tab-num">A</span> alphaXiv論文調査・テキストマイニング
-      </button>
-      <button class="tab-btn" data-tab="train">
-        <span class="tab-num">B</span> 模倣学習＆強化学習スタジオ (Step 1〜2)
-      </button>
-      <button class="tab-btn" data-tab="eval">
-        <span class="tab-num">C</span> MuJoCo動作確認・学習グラフ・AI再指示 (Step 3〜4)
-      </button>
-    </nav>
+  <!-- Collapsible System Information Drawer -->
+  <aside id="systemInfoDrawer" class="system-drawer hidden" aria-label="システム構成情報">
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <strong>システムインフラ情報 (AWS大阪リージョン)</strong>
+        <button id="btnCloseSystemInfo" class="btn-icon" aria-label="閉じる">✕</button>
+      </div>
+      <div class="drawer-grid">
+        <div>
+          <span class="drawer-label">AWS Region:</span>
+          <span class="drawer-val">{{ aws_region }}</span>
+        </div>
+        <div>
+          <span class="drawer-label">S3 Bucket:</span>
+          <span class="drawer-val">{{ s3_bucket }}</span>
+        </div>
+        <div>
+          <span class="drawer-label">保存ポリシー:</span>
+          <span class="drawer-val">10年保持 (Intelligent-Tiering)</span>
+        </div>
+        <div>
+          <span class="drawer-label">S3 フォルダ構成:</span>
+          <span class="drawer-val"><code>papers/</code>, <code>text_mining/</code>, <code>mocap/</code>, <code>report/</code></span>
+        </div>
+      </div>
+    </div>
+  </aside>
 
-    <div class="workflow-stepper" aria-label="強化学習操作ステップ">
-      <button class="step-chip" data-goto-tab="train" data-goto-target="#sectionStep1">
-        <strong>Step 1</strong> AIに学習方法を相談 <small>(DAPG/RLPD/AWAC)</small>
+  <!-- Main Navigation Tabs (3 Main Sections) -->
+  <nav class="nav-shell" aria-label="メインナビゲーション">
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" role="tab" id="tabBtnPapers" aria-selected="true" aria-controls="tab-papers" data-tab="papers">
+        論文を探す
       </button>
-      <span class="step-arrow">→</span>
-      <button class="step-chip" data-goto-tab="train" data-goto-target="#sectionStep2">
-        <strong>Step 2</strong> モーション選択＆学習開始
+      <button class="tab-btn" role="tab" id="tabBtnTrain" aria-selected="false" aria-controls="tab-train" data-tab="train">
+        学習する
       </button>
-      <span class="step-arrow">→</span>
-      <button class="step-chip" data-goto-tab="eval" data-goto-target="#sectionStep3">
-        <strong>Step 3</strong> MuJoCo動画・3D・Loss/成功率確認
-      </button>
-      <span class="step-arrow">→</span>
-      <button class="step-chip" data-goto-tab="eval" data-goto-target="#sectionStep4">
-        <strong>Step 4</strong> 追随性・滑らかさ・過学習を評価し再指示
+      <button class="tab-btn" role="tab" id="tabBtnEval" aria-selected="false" aria-controls="tab-eval" data-tab="eval">
+        結果を評価
       </button>
     </div>
-  </div>
 
-  <div id="toastBox" class="toast hidden"></div>
+    <!-- 4-Step Guided Stepper (Visible in Train & Eval tabs) -->
+    <div id="workflowStepper" class="workflow-stepper" aria-label="強化学習ワークフローステップ">
+      <button class="step-chip" id="stepChip1" data-goto-tab="train" data-goto-target="#sectionStep1">
+        <span class="step-badge-num">1</span>
+        <span class="step-name">AIに相談</span>
+        <span class="step-state-tag" id="stepState1">未相談</span>
+      </button>
+      <span class="step-arrow" aria-hidden="true">→</span>
+      <button class="step-chip" id="stepChip2" data-goto-tab="train" data-goto-target="#sectionStep2">
+        <span class="step-badge-num">2</span>
+        <span class="step-name">学習を開始</span>
+        <span class="step-state-tag" id="stepState2">待機中</span>
+      </button>
+      <span class="step-arrow" aria-hidden="true">→</span>
+      <button class="step-chip" id="stepChip3" data-goto-tab="eval" data-goto-target="#sectionStep3">
+        <span class="step-badge-num">3</span>
+        <span class="step-name">結果を確認</span>
+        <span class="step-state-tag" id="stepState3">待機中</span>
+      </button>
+      <span class="step-arrow" aria-hidden="true">→</span>
+      <button class="step-chip" id="stepChip4" data-goto-tab="eval" data-goto-target="#sectionStep4">
+        <span class="step-badge-num">4</span>
+        <span class="step-name">評価・再指示</span>
+        <span class="step-state-tag" id="stepState4">未評価</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Global Toast Notification -->
+  <div id="toastBox" class="toast hidden" role="status" aria-live="polite"></div>
 
   <main class="container">
-    <!-- ==================== TAB A: alphaXiv Paper Scraping & Text Mining ==================== -->
-    <section id="tab-papers" class="tab-panel active">
-      <div class="card control-bar">
-        <div class="field-grow">
-          <label for="keywordsInput">alphaXiv 検索キーワード（カンマ区切り・毎月1日 03:00 Cron自動実行＆いつでも手動実行可能）</label>
-          <input id="keywordsInput" type="text" value="{{ default_keywords }}" />
+    <!-- ==================== TAB 1: 論文を探す ==================== -->
+    <section id="tab-papers" class="tab-panel active" role="tabpanel" aria-labelledby="tabBtnPapers">
+      <!-- Scraping & Update Control -->
+      <div class="card control-card">
+        <div class="control-row">
+          <div class="field-grow">
+            <label for="keywordsInput">検索キーワード</label>
+            <input id="keywordsInput" type="text" value="{{ default_keywords }}" placeholder="キーワードをカンマ区切りで入力" />
+            <span class="field-helper">毎月1日 03:00 に自動実行されます。手動更新も可能です。</span>
+          </div>
+          <div class="field-fixed">
+            <label for="maxPerKw">取得上限 / 語</label>
+            <input id="maxPerKw" type="number" min="1" max="20" value="6" />
+          </div>
+          <div class="btn-wrap">
+            <button id="btnScrape" class="btn btn-primary">
+              <span class="btn-text">論文を更新</span>
+            </button>
+          </div>
         </div>
-        <div class="field-sm">
-          <label for="maxPerKw">各語取得上限</label>
-          <input id="maxPerKw" type="number" min="1" max="20" value="6" />
+
+        <div id="scrapeJobBanner" class="job-banner hidden" role="alert" aria-live="polite">
+          <div class="job-text" id="scrapeJobText"></div>
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" id="scrapeProgressFill" style="width: 15%"></div>
+          </div>
         </div>
-        <button id="btnScrape" class="btn btn-primary">
-          論文収集・テキストマイニング・要約更新を実行
-        </button>
+        <div id="scrapeErrorBanner" class="error-banner hidden" role="alert"></div>
       </div>
 
-      <div id="scrapeJobBanner" class="job-banner hidden">
-        <div class="job-text" id="scrapeJobText"></div>
-        <div class="progress-track"><div class="progress-fill" id="scrapeProgressFill" style="width: 15%"></div></div>
-      </div>
-
+      <!-- KPI Metrics Strip -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <span class="kpi-label">分析対象論文数（人型・2足歩行）</span>
+          <span class="kpi-label">分析対象論文数</span>
           <strong class="kpi-val" id="kpiTotalPapers">-</strong>
+          <span class="kpi-sub">人型・2足歩行ロボティクス</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-label">うち Sim-to-Real 実機転移関連</span>
+          <span class="kpi-label">Sim-to-Real 実機転移研究</span>
           <strong class="kpi-val kpi-accent" id="kpiSim2Real">-</strong>
+          <span class="kpi-sub">実機実験・転移検証を含む研究</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-label">月次集計期間</span>
-          <strong class="kpi-val" id="kpiPeriod">-</strong>
+          <span class="kpi-label">対象期間</span>
+          <strong class="kpi-val-text" id="kpiPeriod">-</strong>
+          <span class="kpi-sub">月次集計データ</span>
         </div>
         <div class="kpi-card">
-          <span class="kpi-label">S3 10年保管パス</span>
-          <strong class="kpi-val-sm">s3://{{ s3_bucket }}/text_mining/ &amp; papers/</strong>
+          <span class="kpi-label">最終更新</span>
+          <strong class="kpi-val-text" id="kpiLastUpdated">-</strong>
+          <span class="kpi-sub" id="kpiStatusDetail">S3同期済み</span>
         </div>
       </div>
 
-      <!-- Interactive Filter Toolbar for Text Mining -->
-      <div class="card filter-toolbar">
-        <div class="filter-row">
-          <span class="filter-title">クラスタ絞り込み:</span>
-          <div id="clusterFilterPills" class="pill-group"></div>
+      <!-- Search & Filter Controls -->
+      <div class="card filter-card">
+        <div class="filter-top">
+          <div class="search-box">
+            <label for="paperSearchInput" class="sr-only">論文を検索</label>
+            <input id="paperSearchInput" type="search" placeholder="タイトル・キーワード・年月(例: 2026-03)で絞り込み..." class="search-input" />
+            <button id="btnClearPaperSearch" class="btn btn-secondary btn-sm" aria-label="検索をクリア">クリア</button>
+          </div>
+          <div class="filter-toggles">
+            <label class="toggle-control">
+              <input type="checkbox" id="chkSim2RealOnly" />
+              <span>Sim-to-Real のみ表示</span>
+            </label>
+          </div>
         </div>
-        <div class="filter-row-right">
-          <label class="toggle-label">
-            <input type="checkbox" id="chkSim2RealOnly" />
-            <span>Sim-to-Real 論文のみ表示</span>
-          </label>
-          <label class="toggle-label">
-            <input type="checkbox" id="chkOpenTabOnClick" checked />
-            <span>マップ点クリック時に別タブで alphaXiv 原文を開く</span>
-          </label>
+
+        <div class="filter-clusters">
+          <span class="filter-heading">研究クラスタ:</span>
+          <div id="clusterFilterPills" class="pill-group" role="group" aria-label="研究クラスタ絞り込み"></div>
+        </div>
+
+        <!-- Active Filter Indicator Bar -->
+        <div id="activeFiltersBar" class="active-filters-bar hidden">
+          <span class="active-filters-label">適用中の条件:</span>
+          <div id="activeFilterTags" class="active-filter-tags"></div>
+          <button id="btnResetAllFilters" class="btn btn-secondary btn-xs">すべての条件を解除</button>
         </div>
       </div>
 
-      <div class="grid-2-wide">
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <h2>フィジカルAI・人型ロボット研究 2D密度クラスタマップ</h2>
-              <span class="hint">点をクリックすると右側に構造化要約を表示し、alphaXiv 論文ページへ遷移します</span>
+      <!-- 2-Column Responsive Layout: Map/Analytics + Detail Panel -->
+      <div class="grid-papers">
+        <div class="papers-left-col">
+          <!-- 2D Density Cluster Map -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2>研究トレンドマップ</h2>
+                <p class="hint">点をクリックすると右側に詳細を表示します（白: シミュレーション研究 / 黄: Sim-to-Real）</p>
+              </div>
+              <button id="btnResetMapFilter" class="btn btn-secondary btn-sm">全体表示に戻す</button>
             </div>
-            <button id="btnResetMapFilter" class="btn btn-secondary btn-sm">全体表示に戻す</button>
+            <div id="densityMapPlot" class="plot-box-lg" aria-label="研究トレンド2D散布図マップ"></div>
           </div>
-          <div id="densityMapPlot" class="plot-box-lg"></div>
+
+          <!-- Monthly Trend & Top Keywords -->
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header">
+                <h2>月別 論文数の推移</h2>
+                <p class="hint">バーをクリックで該当月に絞り込み</p>
+              </div>
+              <div id="monthlyTrendPlot" class="plot-box-md" aria-label="月別論文数推移グラフ"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <h2>頻出キーワード上位</h2>
+                <p class="hint">バーをクリックでキーワード絞り込み</p>
+              </div>
+              <div id="topTermsPlot" class="plot-box-md" aria-label="頻出キーワード上位グラフ"></div>
+            </div>
+          </div>
         </div>
 
-        <div class="card detail-card">
-          <div class="card-header">
-            <h2>選択論文の要約・詳細（S3 `papers/` 保存）</h2>
-            <span class="badge" id="selectedPaperIdBadge">未選択</span>
-          </div>
-          <div id="paperDetailBox" class="paper-detail-empty">
-            左の2D密度マップ上の点、または下の論文一覧の行をクリックすると、日本語要約と alphaXiv リンクが表示されます。
+        <!-- Paper Detail Panel (Right Column on Desktop, Sticky / Inline) -->
+        <div class="papers-right-col" id="paperDetailContainer">
+          <div class="card detail-card">
+            <div class="card-header">
+              <div>
+                <h2>論文詳細</h2>
+                <p class="hint" id="detailHelperText">マップの点または一覧の行を選択</p>
+              </div>
+              <span class="badge" id="selectedPaperIdBadge">未選択</span>
+            </div>
+            <div id="paperDetailBox" class="paper-detail-empty">
+              左のマップ上の点、または下の論文一覧から論文を選択してください。詳細と日本語要約が表示されます。
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-header">
-            <h2>月別 論文集計推移（月次テキストマイニング集計）</h2>
-            <span class="hint">棒グラフをクリックすると該当月で下の論文一覧を絞り込みます</span>
-          </div>
-          <div id="monthlyTrendPlot" class="plot-box-md"></div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <h2>頻出技術キーワード上位（TF-IDF重要度スコア）</h2>
-            <span class="hint">キーワードバーをクリックすると該当語を含む論文を絞り込みます</span>
-          </div>
-          <div id="topTermsPlot" class="plot-box-md"></div>
-        </div>
-      </div>
-
-      <div class="card">
+      <!-- Paper Catalog Table -->
+      <div class="card" id="papersTableSection">
         <div class="card-header">
           <div>
-            <h2>収集済み論文・日本語要約カタログ</h2>
-            <span class="hint" id="tableCountHint">全 0 件表示中</span>
-          </div>
-          <div class="table-actions">
-            <input id="paperSearchInput" type="search" placeholder="タイトル・要約・月(2026-08等)・キーワードで検索..." class="search-input" />
-            <button id="btnClearPaperSearch" class="btn btn-secondary btn-sm">クリア</button>
+            <h2>論文一覧</h2>
+            <p class="hint" id="tableCountHint">全 0 件中 0 件表示</p>
           </div>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap" tabindex="0" role="region" aria-label="論文データ一覧">
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:95px">公開月</th>
-                <th style="width:28%">論文タイトル（別タブ閲覧リンク）</th>
-                <th style="width:16%">研究クラスタ</th>
-                <th style="width:100px">Sim-to-Real</th>
-                <th>日本語要約（目的・手法・成果）</th>
+                <th style="width: 105px;">公開月</th>
+                <th style="width: 32%;">タイトル</th>
+                <th style="width: 18%;">研究クラスタ</th>
+                <th style="width: 110px;">分類</th>
+                <th>要旨（抜粋）</th>
               </tr>
             </thead>
             <tbody id="papersTableBody"></tbody>
           </table>
+          <div id="tableEmptyState" class="table-empty hidden">
+            <p id="tableEmptyMessage">条件に一致する論文がありません。</p>
+            <button id="btnEmptyReset" class="btn btn-secondary btn-sm">絞り込みをリセットする</button>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ==================== TAB B: Imitation Learning + RL Studio (Step 1 & Step 2) ==================== -->
-    <section id="tab-train" class="tab-panel">
+    <!-- ==================== TAB 2: 学習する ==================== -->
+    <section id="tab-train" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnTrain">
       <div class="grid-2">
-        <!-- STEP 1 -->
+        <!-- STEP 1: AI Advisor -->
         <div class="card" id="sectionStep1">
           <div class="card-header">
             <div>
               <span class="step-badge">STEP 1</span>
-              <h2>模倣学習＆強化学習の方法を Antigravity AI に聞く</h2>
+              <h2>学習方法をAIに相談</h2>
             </div>
-            <span class="badge" id="advisorEngineBadge">Antigravity AI Advisor</span>
+            <span class="badge" id="advisorEngineBadge">AI Advisor</span>
           </div>
-          <p class="muted">
-            モーションデータの特徴や目標に応じて、<strong>DAPG</strong>・<strong>RLPD</strong>・<strong>AWAC</strong> のどれを選択すべきかワンクリックまたは自由入力で相談できます。
+          <p class="section-desc">
+            歩行モーションの特徴や目標に合わせて、最適なアルゴリズム（<strong>DAPG / RLPD / AWAC</strong>）を相談できます。
           </p>
 
-          <div class="prompt-chips-label">ワンクリック質問プリセット（クリックで即質問）:</div>
-          <div class="prompt-chips">
-            <button class="chip-btn" data-ask="モーションキャプチャーの歩行軌道を忠実に再現しつつ安定して歩かせるには、DAPG・RLPD・AWACのどれが良いですか？">
-              🎯 歩行軌道の忠実な追随（DAPG相談）
-            </button>
-            <button class="chip-btn" data-ask="少ない試行回数（高サンプル効率）で素早くタスク成功率と報酬を最大化するにはどの学習方法が良いですか？">
-              ⚡ サンプル効率・成功率重視（RLPD相談）
-            </button>
-            <button class="chip-btn" data-ask="過学習や関節の激しい振動（ジャーク）を抑え、滑らかで安全な2足歩行を学習するにはどの手法が良いですか？">
-              🌊 滑らかな動作・過学習抑制（AWAC相談）
-            </button>
-            <button class="chip-btn" data-ask="DAPG、RLPD、AWACの3手法それぞれの特徴・長所・短所を比較して教えてください。">
-              📊 3手法（DAPG / RLPD / AWAC）の比較
-            </button>
+          <div class="chips-group">
+            <span class="chips-label">質問テンプレート（クリックで入力・送信）:</span>
+            <div class="prompt-chips">
+              <button class="chip-btn" data-ask="モーションキャプチャーの歩行軌道を忠実に再現しつつ安定して歩かせるには、DAPG・RLPD・AWACのどれが良いですか？">
+                🎯 軌道を忠実に追随したい (DAPG)
+              </button>
+              <button class="chip-btn" data-ask="少ない試行回数（高サンプル効率）で素早くタスク成功率と報酬を最大化するにはどの学習方法が良いですか？">
+                ⚡ 少ない試行で成功率を高めたい (RLPD)
+              </button>
+              <button class="chip-btn" data-ask="過学習や関節の激しい振動（ジャーク）を抑え、滑らかで安全な2足歩行を学習するにはどの手法が良いですか？">
+                🌊 関節の振動を抑えて滑らかにしたい (AWAC)
+              </button>
+              <button class="chip-btn" data-ask="DAPG、RLPD、AWACの3手法それぞれの特徴・長所・短所を比較して教えてください。">
+                📊 3手法の特徴と違いを比較
+              </button>
+            </div>
           </div>
 
-          <div id="advisorChatLog" class="chat-log">
+          <div id="advisorChatLog" class="chat-log" role="log" aria-live="polite">
             <div class="chat-msg ai">
               <strong>Antigravity Physical AI アドバイザー</strong><br/>
-              上のプリセットボタンを押すか、下の入力欄から質問してください。推奨アルゴリズム（<strong>DAPG / RLPD / AWAC</strong>）と最適ハイパーパラメータを提案します。
+              上のテンプレートを押すか、下の入力欄から質問してください。人型ロボットの歩行学習に適した手法と設定を提案します。
             </div>
           </div>
 
           <div class="chat-input-row">
-            <input id="advisorQuestion" type="text" placeholder="自由に質問を入力（例: 大歩幅のダイナミック歩行で転倒しない学習方法は？）" />
-            <button id="btnAskAdvisor" class="btn btn-primary">AIに聞く</button>
+            <label for="advisorQuestion" class="sr-only">AIへの相談内容</label>
+            <input id="advisorQuestion" type="text" placeholder="質問を入力（例: 大歩幅歩行で転倒を防ぐには？）" />
+            <button id="btnAskAdvisor" class="btn btn-primary">
+              <span class="btn-text">AIに相談</span>
+            </button>
           </div>
+          <div id="advisorErrorBanner" class="error-banner hidden" role="alert"></div>
 
+          <!-- Suggested Config Banner -->
           <div id="applySuggestionWrap" class="suggestion-banner hidden">
-            <div>
-              <strong>AI推奨アルゴリズム: <span id="suggestedMethodText">-</span></strong>
-              <div class="hint">右側の Step 2 パラメータ設定へワンクリックで反映できます</div>
+            <div class="suggestion-text">
+              <strong>AIの推奨: <span id="suggestedMethodText">-</span></strong>
+              <p class="hint">この推奨アルゴリズムとパラメータを設定フォームへ反映できます。</p>
             </div>
-            <button id="btnApplySuggested" class="btn btn-accent">推奨設定を Step 2 へ自動反映 →</button>
+            <button id="btnApplySuggested" class="btn btn-accent btn-sm">推奨設定を反映 →</button>
           </div>
         </div>
 
-        <!-- STEP 2 -->
+        <!-- STEP 2: Training Setup & Execution -->
         <div class="card" id="sectionStep2">
           <div class="card-header">
             <div>
               <span class="step-badge">STEP 2</span>
-              <h2>モーションキャプチャー選択 &amp; 強化学習スタート</h2>
-            </div>
-            <span class="pill pill-s3">保存先: s3://{{ s3_bucket }}/mocap/ &amp; report/</span>
-          </div>
-
-          <!-- Algorithm Selection Cards -->
-          <label class="section-label">1. 学習アルゴリズムを選択（DAPG / RLPD / AWAC）</label>
-          <div class="algo-cards" id="algoCards">
-            <div class="algo-card active" data-method="DAPG">
-              <div class="algo-card-top">
-                <strong>DAPG</strong>
-                <span class="algo-rec-badge hidden" id="recBadge-DAPG">AI推奨</span>
-              </div>
-              <div class="algo-sub">Demo Augmented Policy Gradient</div>
-              <p>BC模倣正則化を減衰させながら方策勾配で改善。お手本軌道の忠実な追随に最適。</p>
-            </div>
-            <div class="algo-card" data-method="RLPD">
-              <div class="algo-card-top">
-                <strong>RLPD</strong>
-                <span class="algo-rec-badge hidden" id="recBadge-RLPD">AI推奨</span>
-              </div>
-              <div class="algo-sub">RL with Prior Data</div>
-              <p>事前MoCap 50%＋オンライン50%対称サンプリング＆LayerNorm Twin-Q。高サンプル効率。</p>
-            </div>
-            <div class="algo-card" data-method="AWAC">
-              <div class="algo-card-top">
-                <strong>AWAC</strong>
-                <span class="algo-rec-badge hidden" id="recBadge-AWAC">AI推奨</span>
-              </div>
-              <div class="algo-sub">Advantage Weighted Actor-Critic</div>
-              <p>アドバンテージ重み付き回帰でデモ分布から逸脱せず改善。過学習・振動抑制に最適。</p>
+              <h2>学習の設定</h2>
             </div>
           </div>
-          <input type="hidden" id="methodSelect" value="DAPG" />
+          <p class="section-desc">
+            基本設定を確認し、「学習を開始」ボタンを押してください。必要に応じて詳細設定を調整できます。
+          </p>
 
-          <!-- Motion Capture Selection & Upload -->
-          <div class="upload-row">
-            <div>
-              <label for="mocapSelect">2. 使用モーションキャプチャーデータ（プリセット3種＋追加登録分）</label>
-              <select id="mocapSelect"></select>
-            </div>
-            <div>
-              <label for="mocapFile">新規MoCapファイル追加（CSV / NPZ / BVH → S3 `mocap/` 保存）</label>
-              <div class="inline-upload">
-                <input id="mocapFile" type="file" accept=".csv,.npz,.bvh" />
-                <button id="btnUploadMocap" class="btn btn-secondary">S3へ登録</button>
-              </div>
-            </div>
+          <!-- 1. Motion Selection (Basic) -->
+          <div class="form-group">
+            <label for="mocapSelect" class="form-label-main">1. お手本モーション（モーションキャプチャーデータ）</label>
+            <select id="mocapSelect"></select>
+            <span class="field-helper">歩行の目標となる規範軌道を選択します。</span>
           </div>
 
-          <!-- Hyperparameters with Diff Indicators -->
-          <label class="section-label">3. ハイパーパラメータ設定 <span id="paramDiffHint" class="diff-hint hidden">（AI推奨値を反映済み）</span></label>
-          <div class="form-grid">
-            <div>
-              <label for="epochsInput">エポック数 (Epochs) <span class="diff-tag" id="diff-epochs"></span></label>
+          <!-- 2. Algorithm Radio Cards (Basic) -->
+          <fieldset class="algo-fieldset">
+            <legend class="form-label-main">2. 学習アルゴリズムの選択</legend>
+            <div class="algo-cards-grid" role="radiogroup" aria-label="学習アルゴリズム">
+              <label class="algo-card-label" for="algoRadioDAPG">
+                <input type="radio" id="algoRadioDAPG" name="rlMethodRadio" value="DAPG" checked />
+                <div class="algo-card-box">
+                  <div class="algo-card-top">
+                    <strong>DAPG</strong>
+                    <span class="algo-rec-badge hidden" id="recBadge-DAPG">AI推奨</span>
+                  </div>
+                  <span class="algo-full-name">Demo Augmented Policy Gradient</span>
+                  <p class="algo-desc">模倣学習（BC）を初期化に使い、方策勾配法で改善。お手本軌道の忠実な追随に最適。</p>
+                </div>
+              </label>
+
+              <label class="algo-card-label" for="algoRadioRLPD">
+                <input type="radio" id="algoRadioRLPD" name="rlMethodRadio" value="RLPD" />
+                <div class="algo-card-box">
+                  <div class="algo-card-top">
+                    <strong>RLPD</strong>
+                    <span class="algo-rec-badge hidden" id="recBadge-RLPD">AI推奨</span>
+                  </div>
+                  <span class="algo-full-name">RL with Prior Data</span>
+                  <p class="algo-desc">事前MoCap 50%＋オンライン50%対称サンプリング。少ない試行で成功率を素早く最大化。</p>
+                </div>
+              </label>
+
+              <label class="algo-card-label" for="algoRadioAWAC">
+                <input type="radio" id="algoRadioAWAC" name="rlMethodRadio" value="AWAC" />
+                <div class="algo-card-box">
+                  <div class="algo-card-top">
+                    <strong>AWAC</strong>
+                    <span class="algo-rec-badge hidden" id="recBadge-AWAC">AI推奨</span>
+                  </div>
+                  <span class="algo-full-name">Advantage Weighted Actor-Critic</span>
+                  <p class="algo-desc">デモ分布から大きく逸脱しない安全な学習。過学習や激しい関節振動を抑えたい場合に最適。</p>
+                </div>
+              </label>
+            </div>
+            <input type="hidden" id="methodSelect" value="DAPG" />
+          </fieldset>
+
+          <!-- 3. Epochs (Basic) -->
+          <div class="form-group">
+            <label for="epochsInput" class="form-label-main">3. 学習エポック数 <span class="diff-tag" id="diff-epochs"></span></label>
+            <div class="input-with-unit">
               <input id="epochsInput" type="number" min="5" max="120" value="25" />
+              <span class="unit-label">エポック (推奨: 20〜30)</span>
             </div>
-            <div>
-              <label for="lrInput">学習率 (Learning Rate) <span class="diff-tag" id="diff-learning_rate"></span></label>
-              <input id="lrInput" type="number" step="0.0001" value="0.0003" />
-            </div>
-            <div>
-              <label for="bcWeightInput">模倣正則化重み (BC Weight) <span class="diff-tag" id="diff-bc_weight"></span></label>
-              <input id="bcWeightInput" type="number" step="0.1" value="1.0" />
-            </div>
-            <div>
-              <label for="smoothWeightInput">滑らかさ重み (Smoothness) <span class="diff-tag" id="diff-smoothness_weight"></span></label>
-              <input id="smoothWeightInput" type="number" step="0.01" value="0.06" />
-            </div>
-            <div>
-              <label for="trackWeightInput">追随報酬重み (Tracking) <span class="diff-tag" id="diff-reward_tracking_weight"></span></label>
-              <input id="trackWeightInput" type="number" step="0.1" value="1.2" />
-            </div>
-            <div>
-              <label for="entropyInput">探索エントロピー (Entropy) <span class="diff-tag" id="diff-entropy_coef"></span></label>
-              <input id="entropyInput" type="number" step="0.005" value="0.01" />
-            </div>
+            <span class="field-helper">学習の反復回数です（1エポックあたり環境ロールアウトと方策更新を実施）。</span>
           </div>
 
-          <details class="advanced-box">
-            <summary>カスタム人型ロボット MJCF (XML) モデルの登録（任意）</summary>
-            <div class="inline-upload" style="margin-top:8px;">
-              <input id="robotXmlFile" type="file" accept=".xml" />
-              <button id="btnUploadXml" class="btn btn-secondary">XMLアップロード</button>
-              <span class="muted" id="currentXmlLabel">現在: humanoid_default.xml (2足歩行11関節)</span>
+          <!-- Detailed Settings (Collapsible) -->
+          <details class="advanced-settings-box">
+            <summary class="advanced-summary">
+              <span>詳細設定（学習率・模倣重み・平滑化・XMLなど）</span>
+              <span class="summary-arrow" aria-hidden="true">▼</span>
+            </summary>
+            <div class="advanced-content">
+              <p class="hint" style="margin-top: 6px;">通常は初期値またはAI推奨値のままで問題ありません。必要に応じて微調整してください。</p>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label for="lrInput">学習率 (Learning Rate) <span class="diff-tag" id="diff-learning_rate"></span></label>
+                  <input id="lrInput" type="number" step="0.0001" value="0.0003" />
+                  <span class="field-helper">モデルの更新幅（標準: 0.0003）</span>
+                </div>
+                <div class="form-group">
+                  <label for="bcWeightInput">模倣正則化重み (BC Weight) <span class="diff-tag" id="diff-bc_weight"></span></label>
+                  <input id="bcWeightInput" type="number" step="0.1" value="1.0" />
+                  <span class="field-helper">お手本を模倣する強さ</span>
+                </div>
+                <div class="form-group">
+                  <label for="smoothWeightInput">滑らかさ重み (Smoothness) <span class="diff-tag" id="diff-smoothness_weight"></span></label>
+                  <input id="smoothWeightInput" type="number" step="0.01" value="0.06" />
+                  <span class="field-helper">関節のガタつきを抑える強さ</span>
+                </div>
+                <div class="form-group">
+                  <label for="trackWeightInput">追随報酬重み (Tracking Reward) <span class="diff-tag" id="diff-reward_tracking_weight"></span></label>
+                  <input id="trackWeightInput" type="number" step="0.1" value="1.2" />
+                  <span class="field-helper">姿勢一致時の報酬ボーナス</span>
+                </div>
+                <div class="form-group">
+                  <label for="entropyInput">探索エントロピー (Entropy Coef) <span class="diff-tag" id="diff-entropy_coef"></span></label>
+                  <input id="entropyInput" type="number" step="0.005" value="0.01" />
+                  <span class="field-helper">ランダム探索の度合い（過学習抑制）</span>
+                </div>
+              </div>
+
+              <!-- Custom MoCap & XML Uploads -->
+              <div class="upload-section">
+                <div class="form-group">
+                  <label for="mocapFile">新規モーションのアップロード (CSV / NPZ / BVH)</label>
+                  <div class="inline-upload">
+                    <input id="mocapFile" type="file" accept=".csv,.npz,.bvh" />
+                    <button id="btnUploadMocap" class="btn btn-secondary btn-sm">S3へ登録</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="robotXmlFile">カスタムロボットXML (MJCF) の登録</label>
+                  <div class="inline-upload">
+                    <input id="robotXmlFile" type="file" accept=".xml" />
+                    <button id="btnUploadXml" class="btn btn-secondary btn-sm">XML登録</button>
+                  </div>
+                  <span class="field-helper" id="currentXmlLabel">現在: humanoid_default.xml (2足歩行11関節)</span>
+                  <input type="hidden" id="robotXmlName" value="humanoid_default.xml" />
+                </div>
+              </div>
             </div>
           </details>
-          <input type="hidden" id="robotXmlName" value="humanoid_default.xml" />
 
+          <!-- Pre-flight Confirmation Card -->
+          <div class="card preview-card">
+            <span class="preview-title">開始前の設定確認:</span>
+            <div class="preview-grid">
+              <div><span class="preview-label">手法:</span> <strong id="previewMethod">DAPG</strong></div>
+              <div><span class="preview-label">モーション:</span> <strong id="previewMocap">-</strong></div>
+              <div><span class="preview-label">エポック:</span> <strong id="previewEpochs">25</strong></div>
+              <div><span class="preview-label">滑らかさ:</span> <strong id="previewSmooth">0.06</strong></div>
+            </div>
+          </div>
+
+          <!-- Training Action -->
           <div class="actions-row">
             <button id="btnStartTrain" class="btn btn-primary btn-lg">
-              🚀 模倣学習＆強化学習をスタート（完了後に自動で Step 3 検証画面へ移動）
+              <span class="btn-text">学習を開始</span>
             </button>
+            <p class="action-helper-text">※ 完了後に自動で「結果を評価」画面へ切り替わり、3D動作とグラフを表示します。</p>
           </div>
 
-          <div id="trainJobBanner" class="job-banner hidden">
+          <div id="trainJobBanner" class="job-banner hidden" role="alert" aria-live="polite">
             <div class="job-text" id="trainJobText"></div>
-            <div class="progress-track"><div class="progress-fill" id="trainProgressFill" style="width: 5%"></div></div>
+            <div class="progress-track" aria-hidden="true">
+              <div class="progress-fill" id="trainProgressFill" style="width: 5%"></div>
+            </div>
           </div>
+          <div id="trainErrorBanner" class="error-banner hidden" role="alert"></div>
         </div>
       </div>
     </section>
 
-    <!-- ==================== TAB C: MuJoCo Verification, Graphs & Retrain (Step 3 & Step 4) ==================== -->
-    <section id="tab-eval" class="tab-panel">
-      <!-- Run Selector & KPI Summary -->
-      <div class="card control-bar" id="sectionStep3">
-        <div class="field-grow">
-          <label for="reportSelect">STEP 3: 学習レポート選択（S3 `report/` フォルダ保存済み履歴）</label>
-          <select id="reportSelect"></select>
+    <!-- ==================== TAB 3: 結果を評価 ==================== -->
+    <section id="tab-eval" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnEval">
+      <!-- Active Run Selector & Context Header -->
+      <div class="card run-header-card" id="sectionStep3">
+        <div class="run-header-top">
+          <div class="field-grow">
+            <label for="reportSelect">表示する学習結果を選択</label>
+            <select id="reportSelect"></select>
+          </div>
+          <button id="btnLoadReport" class="btn btn-secondary">
+            <span class="btn-text">結果を読込</span>
+          </button>
         </div>
-        <button id="btnLoadReport" class="btn btn-secondary">選択レポートを読込</button>
-        <a id="btnDownloadVideo" href="#" download class="btn btn-secondary">MP4動画を保存</a>
+
+        <div class="run-meta-strip">
+          <div class="run-meta-item">
+            <span class="meta-label">Run ID:</span>
+            <strong class="meta-val" id="evalRunId">-</strong>
+          </div>
+          <div class="run-meta-item">
+            <span class="meta-label">手法:</span>
+            <strong class="meta-val" id="evalMethod">-</strong>
+          </div>
+          <div class="run-meta-item">
+            <span class="meta-label">モーション:</span>
+            <strong class="meta-val" id="evalMocap">-</strong>
+          </div>
+          <div class="run-meta-item">
+            <span class="meta-label">実行日時:</span>
+            <strong class="meta-val" id="evalCreatedAt">-</strong>
+          </div>
+        </div>
       </div>
 
-      <!-- Evaluation KPI Strip -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <span class="kpi-label">採用アルゴリズム / モーション</span>
-          <strong class="kpi-val-sm" id="evalKpiMethod">-</strong>
+      <!-- 1. Executive Summary & Diagnostics (Shown First!) -->
+      <div class="card diagnostics-main-card">
+        <div class="card-header">
+          <div>
+            <span class="step-badge">STEP 3</span>
+            <h2>総合診断レポート</h2>
+            <p class="hint">学習済みモデルの歩行安定性・人間追随度・過学習リスクを診断</p>
+          </div>
+          <button id="btnToggleScoreHelp" class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="scoreHelpBox">
+            スコアの評価基準
+          </button>
         </div>
-        <div class="kpi-card">
-          <span class="kpi-label">最終タスク成功率</span>
-          <strong class="kpi-val kpi-ok" id="evalKpiSuccess">-</strong>
+
+        <!-- KPI Score Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">タスク成功率</span>
+            <strong class="kpi-val kpi-ok" id="evalKpiSuccess">-</strong>
+            <span class="kpi-sub">転倒せず歩行を継続した割合</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">人の動きへの追随性スコア</span>
+            <strong class="kpi-val" id="evalKpiTracking">-</strong>
+            <span class="kpi-sub">目標関節軌道との一致度 (100点満点)</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">動作の滑らかさスコア</span>
+            <strong class="kpi-val" id="evalKpiSmooth">-</strong>
+            <span class="kpi-sub">関節の角加速度変化（低ジャーク性）</span>
+          </div>
+          <div class="kpi-card">
+            <span class="kpi-label">過学習判定</span>
+            <strong class="kpi-val-text" id="evalKpiOverfit">-</strong>
+            <span class="kpi-sub" id="evalKpiOverfitGap">Train/Val Loss 乖離</span>
+          </div>
         </div>
-        <div class="kpi-card">
-          <span class="kpi-label">人の動きへの追随性スコア</span>
-          <strong class="kpi-val" id="evalKpiTracking">-</strong>
+
+        <!-- Collapsible Score Criteria Guide -->
+        <div id="scoreHelpBox" class="score-help-box hidden">
+          <div class="score-help-grid">
+            <div>
+              <strong>🎯 追随性スコア:</strong>
+              <p>人間のお手本角度とロボット関節角度の誤差から算出。70点以上で「良好」、80点以上で「極めて高い追随性」と判定します。</p>
+            </div>
+            <div>
+              <strong>🌊 滑らかさスコア:</strong>
+              <p>動作の角加速度の急変（ジャーク）を評価。70点以上で「滑らか」、60点未満は「振動・ガタつきあり」と判定します。</p>
+            </div>
+            <div>
+              <strong>🛡️ 過学習判定:</strong>
+              <p>Train Lossに対してValidation Lossが乖離した際に警告を発します。過学習時は模倣重みを下げ探索を促します。</p>
+            </div>
+          </div>
         </div>
-        <div class="kpi-card">
-          <span class="kpi-label">動作の滑らかさスコア</span>
-          <strong class="kpi-val" id="evalKpiSmooth">-</strong>
-        </div>
-        <div class="kpi-card">
-          <span class="kpi-label">過学習（Train/Val乖離）判定</span>
-          <strong class="kpi-val-sm" id="evalKpiOverfit">-</strong>
+
+        <div id="diagnosticsDetails" class="diagnostics-details">
+          学習レポートを読み込み中です...
         </div>
       </div>
 
-      <!-- Dual Visual Verification: MuJoCo MP4 + Interactive Three.js 3D Viewer -->
+      <!-- 2. Visual Inspection: MP4 Simulation Video + Three.js 3D Viewer -->
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
             <div>
-              <h2>MuJoCo 物理シミュレーション動画（MP4）</h2>
-              <span class="hint">EC2上でオフスクリーン描画された2足歩行ロボットの評価ロールアウト</span>
+              <h2>動作シミュレーション動画</h2>
+              <p class="hint">MuJoCo による2足歩行物理ロールアウト (MP4)</p>
             </div>
-            <div class="viewer-controls">
-              <button class="btn btn-secondary btn-xs speed-vid-btn" data-vrate="0.5">0.5x</button>
-              <button class="btn btn-secondary btn-xs speed-vid-btn active" data-vrate="1.0">1.0x</button>
-              <button class="btn btn-secondary btn-xs speed-vid-btn" data-vrate="1.5">1.5x</button>
+            <div class="viewer-actions">
+              <div class="speed-buttons" role="group" aria-label="動画再生速度">
+                <button class="btn btn-secondary btn-xs speed-vid-btn" data-vrate="0.5">0.5x</button>
+                <button class="btn btn-secondary btn-xs speed-vid-btn active" data-vrate="1.0">1.0x</button>
+                <button class="btn btn-secondary btn-xs speed-vid-btn" data-vrate="1.5">1.5x</button>
+              </div>
+              <a id="btnDownloadVideo" href="#" download class="btn btn-secondary btn-xs">保存</a>
             </div>
           </div>
-          <video id="mujocoVideo" class="video-player" controls autoplay loop muted playsinline></video>
+          <video id="mujocoVideo" class="video-player" controls autoplay loop muted playsinline aria-label="物理シミュレーション動画"></video>
         </div>
 
         <div class="card">
           <div class="card-header">
             <div>
-              <h2>Three.js 3D 骨格ビューア（お手本重ね比較対応）</h2>
-              <span class="hint">マウスドラッグで360°回転・ホイールでズーム | <span style="color:#f97316">●橙: 学習ロボット</span> / <span style="color:#10b981">●緑: 人間お手本MoCap</span></span>
+              <h2>3D骨格ビューア</h2>
+              <p class="hint">ドラッグで360°回転・ホイールでズーム | <span style="color:#f97316">●橙: 学習ロボット</span> / <span style="color:#10b981">●緑: お手本MoCap</span></p>
             </div>
-            <label class="toggle-label">
+            <label class="toggle-control">
               <input type="checkbox" id="chkShowRefSkeleton" checked />
-              <span>お手本モーション骨格(緑)を重ね表示</span>
+              <span>お手本骨格を表示</span>
             </label>
           </div>
 
-          <div id="threeContainer" class="three-box"></div>
+          <div id="threeContainer" class="three-box" tabindex="0" role="region" aria-label="3D骨格ビューア（マウス操作対応）"></div>
 
           <div class="three-toolbar">
             <button id="btnToggle3D" class="btn btn-primary btn-sm">一時停止</button>
-            <button id="btnStepPrev" class="btn btn-secondary btn-xs">◀</button>
-            <input id="frameSlider" type="range" min="0" max="119" value="0" class="frame-slider" />
-            <button id="btnStepNext" class="btn btn-secondary btn-xs">▶</button>
+            <button id="btnStepPrev" class="btn btn-secondary btn-xs" aria-label="1コマ戻る">◀</button>
+            <input id="frameSlider" type="range" min="0" max="119" value="0" class="frame-slider" aria-label="コマ送りスライダー" />
+            <button id="btnStepNext" class="btn btn-secondary btn-xs" aria-label="1コマ進む">▶</button>
             <span id="frameCounter" class="frame-label">Frame 1/120</span>
             <select id="speed3DSelect" class="speed-select" aria-label="3D再生速度">
               <option value="0.25">0.25x</option>
@@ -427,79 +628,65 @@
               <option value="1" selected>1.0x</option>
               <option value="2">2.0x</option>
             </select>
-            <div class="cam-presets">
+            <div class="cam-presets" role="group" aria-label="カメラ視点">
               <button class="btn btn-secondary btn-xs cam-btn" data-cam="iso">斜め</button>
-              <button class="btn btn-secondary btn-xs cam-btn" data-cam="side">側面(歩容)</button>
+              <button class="btn btn-secondary btn-xs cam-btn" data-cam="side">側面</button>
               <button class="btn btn-secondary btn-xs cam-btn" data-cam="front">正面</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 4 Analytics Graphs -->
+      <!-- 3. Analytical Charts -->
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
-            <h2>1. LOSS データ推移（Train Loss / Validation Loss）</h2>
-            <span class="hint">Train と Validation の乖離から過学習の有無を診断</span>
+            <h2>1. LOSS 推移 (Train vs Validation)</h2>
+            <p class="hint">乖離から過学習の有無を確認</p>
           </div>
-          <div id="lossPlot" class="plot-box-md"></div>
+          <div id="lossPlot" class="plot-box-md" aria-label="LOSS推移グラフ"></div>
         </div>
         <div class="card">
           <div class="card-header">
-            <h2>2. タスク成功率（%）&amp; エピソード生存ステップ数</h2>
-            <span class="hint">転倒せず目標歩行軌道を追随できた割合</span>
+            <h2>2. タスク成功率 ＆ 生存ステップ数</h2>
+            <p class="hint">転倒せず目標軌道を歩行できた割合</p>
           </div>
-          <div id="successPlot" class="plot-box-md"></div>
+          <div id="successPlot" class="plot-box-md" aria-label="成功率グラフ"></div>
         </div>
       </div>
 
       <div class="grid-2">
         <div class="card">
           <div class="card-header">
-            <h2>3. 強化学習リターン曲線（Episode Return &amp; 移動平均）</h2>
-            <span class="hint">エピソード累積報酬・移動平均・ピーク報酬の推移</span>
+            <h2>3. エピソード累積報酬 (Return)</h2>
+            <p class="hint">累積報酬および移動平均線の向上推移</p>
           </div>
-          <div id="returnPlot" class="plot-box-md"></div>
+          <div id="returnPlot" class="plot-box-md" aria-label="累積リターン曲線"></div>
         </div>
         <div class="card">
           <div class="card-header">
             <div>
-              <h2>4. 関節角度の追随性比較（人間お手本 vs 学習ロボット）</h2>
-              <span class="hint">破線（緑）がお手本MoCap、実線（橙）がロボットの実軌道</span>
+              <h2>4. 関節角度の追随性比較</h2>
+              <p class="hint">破線(緑): お手本MoCap / 実線(橙): ロボット実測</p>
             </div>
-            <select id="jointPlotSelect" class="speed-select" style="width:190px"></select>
+            <select id="jointPlotSelect" class="speed-select" style="min-width: 170px;" aria-label="表示対象の関節"></select>
           </div>
-          <div id="jointTrackingPlot" class="plot-box-md"></div>
+          <div id="jointTrackingPlot" class="plot-box-md" aria-label="関節軌道追随グラフ"></div>
         </div>
       </div>
 
-      <!-- STEP 4: Evaluation Diagnostics & AI Retrain Instruction -->
-      <div class="grid-2" id="sectionStep4">
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <span class="step-badge">STEP 4-A</span>
-              <h2>自動評価診断レポート（追随性・滑らかさ・過学習）</h2>
-            </div>
-          </div>
-          <div id="diagnosticsBox" class="diagnostics-box">
-            学習レポートを読み込み中です...
+      <!-- 4. STEP 4: Evaluation & AI Retrain Workflow -->
+      <div class="card" id="sectionStep4">
+        <div class="card-header">
+          <div>
+            <span class="step-badge">STEP 4</span>
+            <h2>結果を評価し、AIへ再指示</h2>
+            <p class="hint">改善指示をAIに伝えると、パラメータの変更案が作成されます。</p>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <div>
-              <span class="step-badge">STEP 4-B</span>
-              <h2>評価を元に Antigravity AI へ再指示・再学習</h2>
-            </div>
-          </div>
-          <p class="muted">
-            MuJoCoの動作とグラフを評価し、ワンクリック評価チップまたは自由記述でAIへ改善指示を出せます。
-          </p>
-
-          <div class="prompt-chips-label">ワンクリック評価・改善チップ（クリックで指示欄に入力）:</div>
+        <div class="chips-group">
+          <span class="chips-label">評価・改善指示テンプレート（クリックで入力）:</span>
           <div class="prompt-chips">
             <button class="eval-chip-btn" data-instr="人の動き（お手本モーション）への追随性をさらに高めたいので、模倣重みと追随報酬を強化して再学習してください。">
               🎯 人の動きへの追随性をさらに高める
@@ -511,49 +698,84 @@
               🛡️ 過学習を抑えて汎化性能を高める
             </button>
             <button class="eval-chip-btn" data-instr="学習アルゴリズムを RLPD に切り替えて、サンプル効率とタスク成功率を最大化する設定で再学習してください。">
-              ⚡ RLPD に切り替えて再学習
+              ⚡ RLPD に切り替えて成功率重視
             </button>
             <button class="eval-chip-btn" data-instr="学習アルゴリズムを AWAC に切り替えて、デモ分布から逸脱しない安全で滑らかな設定で再学習してください。">
-              🔒 AWAC に切り替えて再学習
+              🔒 AWAC に切り替えて安定重視
             </button>
           </div>
+        </div>
 
-          <textarea id="retrainInstruction" rows="3" placeholder="評価コメント・再学習の指示を入力（上のチップをクリックすると自動入力されます）"></textarea>
+        <div class="form-group">
+          <label for="retrainInstruction">評価コメント・再学習の指示</label>
+          <textarea id="retrainInstruction" rows="3" placeholder="改善したい点（例: 足首のブレを抑えたい、もっと歩幅を広くしたい等）を入力してください"></textarea>
+        </div>
 
-          <div class="actions-row">
-            <button id="btnRetrainWithAI" class="btn btn-primary btn-lg">
-              🔄 AIに評価を伝えてパラメータ自動調整＆再学習を実行
-            </button>
+        <div class="actions-row">
+          <button id="btnCreateRetrainPlan" class="btn btn-primary">
+            <span class="btn-text">AIの変更案を作成</span>
+          </button>
+          <span class="field-helper">※ 変更案の作成だけでは学習は開始されません。内容を確認した後に実行できます。</span>
+        </div>
+        <div id="retrainErrorBanner" class="error-banner hidden" role="alert"></div>
+
+        <!-- Step 4-B: Confirm Parameter Changes & Execute Retrain -->
+        <div id="retrainConfirmBox" class="retrain-confirm-card hidden">
+          <div class="confirm-header">
+            <strong>AIが提案した変更案の確認</strong>
+            <span class="badge" id="retrainEngineBadge">AI Advisor</span>
+          </div>
+          <div id="retrainExplanation" class="retrain-explanation"></div>
+
+          <div class="table-wrap" style="margin-top: 10px;">
+            <table class="data-table" style="font-size: 0.9rem;">
+              <thead>
+                <tr>
+                  <th>パラメータ</th>
+                  <th>変更前</th>
+                  <th>変更後</th>
+                  <th>変更の意図</th>
+                </tr>
+              </thead>
+              <tbody id="retrainDiffTableBody"></tbody>
+            </table>
           </div>
 
-          <div id="evalTrainJobBanner" class="job-banner hidden">
+          <div class="actions-row" style="margin-top: 14px;">
+            <button id="btnExecuteRetrainConfirmed" class="btn btn-accent btn-lg">
+              <span class="btn-text">この設定で再学習を開始</span>
+            </button>
+            <button id="btnCancelRetrain" class="btn btn-secondary">キャンセル</button>
+          </div>
+
+          <div id="evalTrainJobBanner" class="job-banner hidden" role="alert" aria-live="polite">
             <div class="job-text" id="evalTrainJobText"></div>
-            <div class="progress-track"><div class="progress-fill" id="evalTrainProgressFill" style="width: 10%"></div></div>
+            <div class="progress-track" aria-hidden="true">
+              <div class="progress-fill" id="evalTrainProgressFill" style="width: 10%"></div>
+            </div>
           </div>
-
-          <div id="retrainResponseBox" class="chat-msg ai hidden" style="margin-top: 10px;"></div>
         </div>
       </div>
 
-      <!-- Multi-Run Comparison Table -->
+      <!-- 5. Cross-Run Comparison Table -->
       <div class="card">
         <div class="card-header">
           <div>
-            <h2>S3 `report/` 保存済み学習レポート横断比較テーブル</h2>
-            <span class="hint">行をクリックするとそのRunの動画・3D骨格・グラフを即座に切り替えて比較できます</span>
+            <h2>学習結果を比較</h2>
+            <p class="hint">保存済みレポートを一覧比較できます。行をクリックすると結果が切り替わります。</p>
           </div>
         </div>
-        <div class="table-wrap">
+        <div class="table-wrap" tabindex="0" role="region" aria-label="学習結果比較一覧">
           <table class="data-table">
             <thead>
               <tr>
                 <th>Run ID</th>
-                <th>アルゴリズム</th>
-                <th>使用MoCap</th>
+                <th>手法</th>
+                <th>モーション</th>
                 <th>Epochs</th>
-                <th>タスク成功率</th>
-                <th>追随性スコア</th>
-                <th>滑らかさスコア</th>
+                <th>成功率</th>
+                <th>追随性</th>
+                <th>滑らかさ</th>
                 <th>Train / Val Loss</th>
                 <th>過学習判定</th>
                 <th>操作</th>

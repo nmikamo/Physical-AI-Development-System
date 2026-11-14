@@ -1,4 +1,4 @@
-/* Physical AI Development System Frontend v2 (High-Operability Interactive Studio) */
+/* Physical AI Development System Frontend v3 (Enhanced Operability & Accessibility) */
 
 const state = {
   papers: [],
@@ -8,8 +8,10 @@ const state = {
   searchQuery: "",
   selectedPaperId: null,
   suggestedConfig: null,
+  pendingRetrainConfig: null,
   currentReport: null,
   reportsList: [],
+  mocapsList: [],
   frames3D: [],
   jointNames: [],
   frameIndex: 0,
@@ -17,10 +19,27 @@ const state = {
   speed3D: 1.0,
   showRefSkeleton: true,
   threeCtx: null,
+  stepStates: {
+    step1: "未相談",
+    step2: "待機中",
+    step3: "待機中",
+    step4: "未評価",
+  },
 };
 
 const qs = (sel) => document.querySelector(sel);
 const qsa = (sel) => Array.from(document.querySelectorAll(sel));
+
+function escapeHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/'/g, "&#39;");
+}
 
 function showToast(msg) {
   const t = qs("#toastBox");
@@ -31,29 +50,91 @@ function showToast(msg) {
   t._timer = setTimeout(() => t.classList.add("hidden"), 3500);
 }
 
+function showInlineError(elSel, msg) {
+  const el = qs(elSel);
+  if (!el) return;
+  if (!msg) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+  el.textContent = `⚠ ${msg}`;
+  el.classList.remove("hidden");
+}
+
+function setBtnLoading(btnSel, isLoading, loadingText = "処理中...") {
+  const btn = qs(btnSel);
+  if (!btn) return;
+  if (isLoading) {
+    btn.dataset.origText = btn.dataset.origText || btn.querySelector(".btn-text")?.textContent || btn.textContent;
+    btn.disabled = true;
+    btn.classList.add("btn-loading");
+    const tSpan = btn.querySelector(".btn-text");
+    if (tSpan) tSpan.textContent = loadingText;
+  } else {
+    btn.disabled = false;
+    btn.classList.remove("btn-loading");
+    const tSpan = btn.querySelector(".btn-text");
+    if (tSpan && btn.dataset.origText) tSpan.textContent = btn.dataset.origText;
+  }
+}
+
 async function apiJson(url, opts = {}) {
   const res = await fetch(url, opts);
   if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(msg || `HTTP ${res.status}`);
+    let detail = `HTTP ${res.status}`;
+    try {
+      const errBody = await res.json();
+      detail = errBody.detail || errBody.message || JSON.stringify(errBody);
+    } catch {
+      const text = await res.text();
+      if (text) detail = text;
+    }
+    throw new Error(detail);
   }
   return res.json();
 }
 
+/* ==================== Navigation & Guided Stepper ==================== */
+
+function updateStepStatus(stepNum, statusText, stateClass = "") {
+  state.stepStates[`step${stepNum}`] = statusText;
+  const tag = qs(`#stepState${stepNum}`);
+  if (tag) {
+    tag.textContent = statusText;
+    tag.className = "step-state-tag";
+    if (stateClass) tag.classList.add(stateClass);
+  }
+}
+
 function switchTab(tabId, scrollSelector = null) {
-  qsa(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tabId));
-  qsa(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === `tab-${tabId}`));
+  qsa(".tab-btn").forEach((b) => {
+    const isActive = b.dataset.tab === tabId;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-selected", isActive ? "true" : "false");
+  });
+  qsa(".tab-panel").forEach((p) => {
+    const isActive = p.id === `tab-${tabId}`;
+    p.classList.toggle("active", isActive);
+  });
+
+  const stepper = qs("#workflowStepper");
+  if (stepper) {
+    // Show stepper only in train and eval tabs
+    stepper.style.display = tabId === "papers" ? "none" : "flex";
+  }
+
   if (tabId === "eval" && state.threeCtx) {
     setTimeout(resizeThree, 60);
   }
   setTimeout(() => window.dispatchEvent(new Event("resize")), 80);
+
   if (scrollSelector) {
     const target = qs(scrollSelector);
     if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-      target.classList.remove("pulse-highlight");
-      void target.offsetWidth;
-      target.classList.add("pulse-highlight");
+      setTimeout(() => {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
     }
   }
 }
@@ -67,11 +148,40 @@ function initNavigation() {
       switchTab(chip.dataset.gotoTab, chip.dataset.gotoTarget);
     });
   });
+
+  // System info drawer toggle
+  const infoBtn = qs("#btnSystemInfoToggle");
+  const infoDrawer = qs("#systemInfoDrawer");
+  const closeInfoBtn = qs("#btnCloseSystemInfo");
+  if (infoBtn && infoDrawer) {
+    infoBtn.addEventListener("click", () => {
+      const isExpanded = infoBtn.getAttribute("aria-expanded") === "true";
+      infoBtn.setAttribute("aria-expanded", isExpanded ? "false" : "true");
+      infoDrawer.classList.toggle("hidden", isExpanded);
+    });
+    if (closeInfoBtn) {
+      closeInfoBtn.addEventListener("click", () => {
+        infoBtn.setAttribute("aria-expanded", "false");
+        infoDrawer.classList.add("hidden");
+      });
+    }
+  }
+
+  // Score Help toggle
+  const scoreHelpBtn = qs("#btnToggleScoreHelp");
+  const scoreHelpBox = qs("#scoreHelpBox");
+  if (scoreHelpBtn && scoreHelpBox) {
+    scoreHelpBtn.addEventListener("click", () => {
+      const isExpanded = scoreHelpBtn.getAttribute("aria-expanded") === "true";
+      scoreHelpBtn.setAttribute("aria-expanded", isExpanded ? "false" : "true");
+      scoreHelpBox.classList.toggle("hidden", isExpanded);
+    });
+  }
 }
 
-function pollJob(jobId, bannerEl, textEl, fillEl, onDone) {
+function pollJob(jobId, bannerEl, textEl, fillEl, onDone, onFail) {
   bannerEl.className = "job-banner";
-  textEl.textContent = "ジョブを開始しました...";
+  textEl.textContent = "処理を開始しました...";
   if (fillEl) fillEl.style.width = "10%";
 
   const timer = setInterval(async () => {
@@ -85,20 +195,23 @@ function pollJob(jobId, bannerEl, textEl, fillEl, onDone) {
         clearInterval(timer);
         bannerEl.className = "job-banner done";
         if (fillEl) fillEl.style.width = "100%";
-        onDone(job.result);
+        if (onDone) onDone(job.result);
       } else if (job.status === "failed") {
         clearInterval(timer);
         bannerEl.className = "job-banner fail";
+        textEl.textContent = `失敗: ${job.message}`;
+        if (onFail) onFail(job.message);
       }
     } catch (err) {
       clearInterval(timer);
       bannerEl.className = "job-banner fail";
       textEl.textContent = `通信エラー: ${err.message}`;
+      if (onFail) onFail(err.message);
     }
   }, 1200);
 }
 
-/* ==================== TAB A: alphaXiv & Text Mining ==================== */
+/* ==================== TAB 1: 論文を探す (Paper Search & Text Mining) ==================== */
 
 function getFilteredPoints() {
   if (!state.snapshot || !state.snapshot.points) return [];
@@ -111,6 +224,32 @@ function getFilteredPoints() {
     }
     return true;
   });
+}
+
+function updateActiveFiltersBar() {
+  const bar = qs("#activeFiltersBar");
+  const tagsContainer = qs("#activeFilterTags");
+  if (!bar || !tagsContainer) return;
+
+  const tags = [];
+  if (state.activeClusterFilter !== null) {
+    const c = (state.snapshot?.clusters || []).find((x) => x.cluster_id === state.activeClusterFilter);
+    tags.push(`クラスタ: ${c ? c.label.replace(/\n/g, "・") : state.activeClusterFilter}`);
+  }
+  if (state.sim2RealOnly) {
+    tags.push("Sim-to-Real のみ");
+  }
+  if (state.searchQuery) {
+    tags.push(`検索: "${state.searchQuery}"`);
+  }
+
+  if (tags.length === 0) {
+    bar.classList.add("hidden");
+    tagsContainer.innerHTML = "";
+  } else {
+    bar.classList.remove("hidden");
+    tagsContainer.innerHTML = tags.map((t) => `<span class="filter-tag">${escapeHtml(t)}</span>`).join("");
+  }
 }
 
 function renderClusterFilterPills(snapshot) {
@@ -136,6 +275,7 @@ function renderClusterFilterPills(snapshot) {
       renderClusterFilterPills(state.snapshot);
       renderDensityMap(state.snapshot);
       renderPapersTable();
+      updateActiveFiltersBar();
     });
   });
 }
@@ -143,7 +283,7 @@ function renderClusterFilterPills(snapshot) {
 function renderDensityMap(snapshot) {
   const el = qs("#densityMapPlot");
   if (!snapshot || !snapshot.points || snapshot.points.length === 0) {
-    el.innerHTML = `<div class="paper-detail-empty">論文データがありません。「論文収集・テキストマイニング・要約更新を実行」を押してください。</div>`;
+    el.innerHTML = `<div class="paper-detail-empty">論文データがありません。「論文を更新」ボタンを押してください。</div>`;
     return;
   }
 
@@ -155,11 +295,16 @@ function renderDensityMap(snapshot) {
     z: dg.z_matrix,
     colorscale: "Jet",
     showscale: true,
-    contours: { coloring: "heatmap", showlines: true, labelfont: { size: 9, color: "rgba(255,255,255,0.4)" } },
-    line: { width: 0.5, color: "rgba(255,255,255,0.22)" },
+    contours: { coloring: "heatmap", showlines: true, labelfont: { size: 10, color: "rgba(255,255,255,0.5)" } },
+    line: { width: 0.6, color: "rgba(255,255,255,0.25)" },
     opacity: 0.85,
     hoverinfo: "skip",
-    colorbar: { title: "研究密度", tickfont: { color: "#ebf1fa" }, titlefont: { color: "#ebf1fa" }, thickness: 14 },
+    colorbar: {
+      title: "研究密度",
+      tickfont: { color: "#f1f5f9", size: 13 },
+      titlefont: { color: "#f1f5f9", size: 13 },
+      thickness: 16,
+    },
   };
 
   const pts = getFilteredPoints();
@@ -175,14 +320,14 @@ function renderDensityMap(snapshot) {
     customdata: list,
     text: list.map(
       (p) =>
-        `<b>${escapeHtml(p.title)}</b><br>公開月: ${p.month_key} | ${escapeHtml(p.cluster_label)}<br>👉 クリックで要約表示＆alphaXiv論文を開く`
+        `<b>${escapeHtml(p.title)}</b><br>公開: ${p.month_key} | ${escapeHtml(p.cluster_label)}<br>👉 クリックで右側に詳細表示`
     ),
     hovertemplate: "%{text}<extra></extra>",
     marker: {
-      size: 11,
+      size: 12,
       symbol,
       color,
-      line: { width: 1.8, color: "#080e18" },
+      line: { width: 2.0, color: "#090d16" },
     },
   });
 
@@ -193,24 +338,25 @@ function renderDensityMap(snapshot) {
       y: c.center_y,
       text: `<b>${c.label.replace(/\n/g, "<br>")}</b>`,
       showarrow: false,
-      bgcolor: "rgba(255, 255, 255, 0.90)",
+      bgcolor: "rgba(255, 255, 255, 0.92)",
       bordercolor: "#1e293b",
       borderwidth: 1.2,
       borderpad: 5,
-      font: { color: "#0f172a", size: 10.5 },
+      font: { color: "#0f172a", size: 11 },
     }));
 
   const layout = {
     title: {
-      text: `${snapshot.period_label} | 全${snapshot.total_papers}件（うちSim-to-Real ${snapshot.sim_to_real_count}件）`,
-      font: { color: "#ebf1fa", size: 14 },
+      text: `${snapshot.period_label} | 全${snapshot.total_papers}件 (Sim-to-Real: ${snapshot.sim_to_real_count}件)`,
+      font: { color: "#f1f5f9", size: 14 },
     },
-    paper_bgcolor: "#080e18",
-    plot_bgcolor: "#080e18",
-    margin: { l: 25, r: 20, t: 42, b: 35 },
+    paper_bgcolor: "#090d16",
+    plot_bgcolor: "#090d16",
+    font: { color: "#f1f5f9", size: 13 },
+    margin: { l: 25, r: 20, t: 45, b: 35 },
     xaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [-1.18, 1.18] },
     yaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [-1.18, 1.18] },
-    legend: { orientation: "h", y: -0.03, font: { color: "#ebf1fa" } },
+    legend: { orientation: "h", y: -0.04, font: { color: "#f1f5f9", size: 13 } },
     annotations,
   };
 
@@ -218,8 +364,8 @@ function renderDensityMap(snapshot) {
     el,
     [
       contourTrace,
-      makeScatter(genPts, "シミュレーション・基礎制御研究", "#ffffff", "circle"),
-      makeScatter(simPts, "Sim-to-Real 実機転移研究", "#fde047", "diamond"),
+      makeScatter(genPts, "シミュレーション研究", "#ffffff", "circle"),
+      makeScatter(simPts, "Sim-to-Real 実機研究", "#fde047", "diamond"),
     ],
     layout,
     { responsive: true, displayModeBar: false }
@@ -230,7 +376,7 @@ function renderDensityMap(snapshot) {
     el.on("plotly_click", (evt) => {
       const pt = evt?.points?.[0]?.customdata;
       if (!pt) return;
-      selectPaper(pt, qs("#chkOpenTabOnClick").checked);
+      selectPaper(pt, false);
     });
   }
 }
@@ -248,12 +394,13 @@ function formatStructuredSummaryHtml(summaryText) {
     .join("");
 }
 
-function selectPaper(paper, openNewTab = false) {
+function selectPaper(paper, scrollToDetail = false) {
   state.selectedPaperId = paper.paper_id;
   qs("#selectedPaperIdBadge").textContent = paper.paper_id;
   const box = qs("#paperDetailBox");
   box.className = "paper-detail";
-  const authors = (paper.authors || []).join(", ") || "Authors on alphaXiv";
+  const authors = (paper.authors || []).join(", ") || "著者情報（alphaXiv掲載）";
+
   box.innerHTML = `
     <h3>${escapeHtml(paper.title)}</h3>
     <div class="meta-grid">
@@ -261,17 +408,23 @@ function selectPaper(paper, openNewTab = false) {
       <span class="pill pill-s3">${escapeHtml(paper.cluster_label || "Physical AI")}</span>
       <span class="pill ${paper.sim_to_real ? "pill-ok" : ""}">${paper.sim_to_real ? "Sim-to-Real 実機研究" : "Simulation 研究"}</span>
     </div>
-    <div class="muted" style="margin-bottom:10px;">著者: ${escapeHtml(authors)}</div>
-    <a href="${escapeAttr(paper.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width:100%; margin-bottom:10px;">
-      🔗 alphaXiv で論文原文を別画面で開く (${escapeHtml(paper.paper_id)}) ↗
+    <div class="paper-authors">著者: ${escapeHtml(authors)}</div>
+    <a href="${escapeAttr(paper.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width:100%; margin-bottom:14px;">
+      🔗 alphaXiv で論文原文を開く (${escapeHtml(paper.paper_id)}) ↗
     </a>
     <div class="summary-section">
-      ${formatStructuredSummaryHtml(paper.summary_ja)}
+      ${formatStructuredSummaryHtml(paper.summary_ja || paper.abstract)}
     </div>
   `;
+
   renderPapersTable();
-  if (openNewTab && paper.url) {
-    window.open(paper.url, "_blank", "noopener,noreferrer");
+
+  // On smaller screens, scroll user smoothly to the detail panel
+  if (scrollToDetail || window.innerWidth <= 1024) {
+    const detailContainer = qs("#paperDetailContainer");
+    if (detailContainer) {
+      detailContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 }
 
@@ -289,17 +442,17 @@ function renderMonthlyAndTerms(snapshot) {
         type: "bar",
         x: months,
         y: counts,
-        marker: { color: "#3b82f6", line: { color: "#60a5fa", width: 1 } },
+        marker: { color: "#2563eb", line: { color: "#60a5fa", width: 1.2 } },
         hovertemplate: "%{x}: %{y}件 (クリックで絞り込み)<extra></extra>",
       },
     ],
     {
-      paper_bgcolor: "#080e18",
-      plot_bgcolor: "#080e18",
-      font: { color: "#ebf1fa", size: 11 },
-      margin: { l: 40, r: 14, t: 12, b: 48 },
-      xaxis: { title: "公開月 (YYYY-MM)", tickangle: -35 },
-      yaxis: { title: "論文数", gridcolor: "#1e293b" },
+      paper_bgcolor: "#090d16",
+      plot_bgcolor: "#090d16",
+      font: { color: "#f1f5f9", size: 13 },
+      margin: { l: 45, r: 16, t: 16, b: 50 },
+      xaxis: { title: "公開月", tickangle: -30, tickfont: { size: 12 } },
+      yaxis: { title: "論文数", gridcolor: "#1e293b", tickfont: { size: 12 } },
     },
     { responsive: true, displayModeBar: false }
   );
@@ -313,6 +466,7 @@ function renderMonthlyAndTerms(snapshot) {
       state.searchQuery = month;
       renderDensityMap(state.snapshot);
       renderPapersTable();
+      updateActiveFiltersBar();
       showToast(`公開月「${month}」で論文を絞り込みました`);
     });
   }
@@ -326,16 +480,17 @@ function renderMonthlyAndTerms(snapshot) {
         orientation: "h",
         x: terms.map((t) => t.score),
         y: terms.map((t) => t.term),
-        marker: { color: "#f97316" },
+        marker: { color: "#ea580c" },
         hovertemplate: "%{y}: %{x:.3f} (クリックで絞り込み)<extra></extra>",
       },
     ],
     {
-      paper_bgcolor: "#080e18",
-      plot_bgcolor: "#080e18",
-      font: { color: "#ebf1fa", size: 11 },
-      margin: { l: 135, r: 16, t: 12, b: 36 },
-      xaxis: { title: "TF-IDF 重要度", gridcolor: "#1e293b" },
+      paper_bgcolor: "#090d16",
+      plot_bgcolor: "#090d16",
+      font: { color: "#f1f5f9", size: 13 },
+      margin: { l: 140, r: 16, t: 16, b: 40 },
+      xaxis: { title: "TF-IDF 重要度", gridcolor: "#1e293b", tickfont: { size: 12 } },
+      yaxis: { tickfont: { size: 12 } },
     },
     { responsive: true, displayModeBar: false }
   );
@@ -349,6 +504,7 @@ function renderMonthlyAndTerms(snapshot) {
       state.searchQuery = term;
       renderDensityMap(state.snapshot);
       renderPapersTable();
+      updateActiveFiltersBar();
       showToast(`キーワード「${term}」で論文を絞り込みました`);
     });
   }
@@ -356,36 +512,62 @@ function renderMonthlyAndTerms(snapshot) {
 
 function renderPapersTable() {
   const tbody = qs("#papersTableBody");
+  const emptyState = qs("#tableEmptyState");
   const pts = getFilteredPoints();
-  qs("#tableCountHint").textContent = `全 ${pts.length} 件表示中（行クリックで上部に詳細表示、タイトルクリックで別タブ遷移）`;
 
+  const totalCount = state.snapshot?.total_papers || 0;
+  qs("#tableCountHint").textContent = `全 ${totalCount} 件中 ${pts.length} 件を表示中（行クリックで詳細表示）`;
+
+  if (pts.length === 0) {
+    tbody.innerHTML = "";
+    emptyState.classList.remove("hidden");
+    const reasons = [];
+    if (state.searchQuery) reasons.push(`検索語「${state.searchQuery}」`);
+    if (state.sim2RealOnly) reasons.push("Sim-to-Real のみ");
+    if (state.activeClusterFilter !== null) reasons.push("特定クラスタ");
+    qs("#tableEmptyMessage").textContent = `条件（${reasons.join(" ＋ ")}）に一致する論文が見つかりませんでした。`;
+    return;
+  }
+
+  emptyState.classList.add("hidden");
   tbody.innerHTML = pts
     .map((p) => {
       const isSel = p.paper_id === state.selectedPaperId ? "selected-row" : "";
-      const shortSum = String(p.summary_ja || "")
+      // Keep summary short in table (1-2 sentences)
+      const rawText = String(p.summary_ja || p.abstract || "").replace(/【[^】]+】/g, "");
+      const shortSum = rawText
         .split("\n")
-        .slice(0, 2)
-        .join(" / ");
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 1)
+        .join(" ")
+        .slice(0, 80);
+
       return `
-      <tr class="${isSel}" data-pid="${escapeAttr(p.paper_id)}">
+      <tr class="${isSel}" data-pid="${escapeAttr(p.paper_id)}" tabindex="0" role="button" aria-label="${escapeAttr(p.title)}">
         <td><span class="pill">${escapeHtml(p.month_key)}</span></td>
         <td>
-          <a href="${escapeAttr(p.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();">
-            ${escapeHtml(p.title)} ↗
-          </a>
+          <strong>${escapeHtml(p.title)}</strong>
         </td>
         <td><small>${escapeHtml(p.cluster_label || "-")}</small></td>
-        <td>${p.sim_to_real ? '<span class="pill pill-ok">Sim-to-Real</span>' : '<span class="pill">Sim</span>'}</td>
-        <td><small>${escapeHtml(shortSum)}</small></td>
+        <td>${p.sim_to_real ? '<span class="pill pill-ok">Sim-to-Real</span>' : '<span class="pill">Simulation</span>'}</td>
+        <td><span style="color:var(--text-muted); font-size:0.875rem;">${escapeHtml(shortSum)}...</span></td>
       </tr>`;
     })
     .join("");
 
   tbody.querySelectorAll("tr").forEach((tr) => {
-    tr.addEventListener("click", () => {
+    const handleSelect = () => {
       const pid = tr.dataset.pid;
       const found = (state.snapshot?.points || []).find((p) => p.paper_id === pid);
       if (found) selectPaper(found, false);
+    };
+    tr.addEventListener("click", handleSelect);
+    tr.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleSelect();
+      }
     });
   });
 }
@@ -396,18 +578,20 @@ function applyPaperSnapshot(snapshot, papers) {
   if (snapshot) {
     qs("#kpiTotalPapers").textContent = `${snapshot.total_papers} 件`;
     qs("#kpiSim2Real").textContent = `${snapshot.sim_to_real_count} 件`;
-    qs("#kpiPeriod").textContent = snapshot.period_label;
+    qs("#kpiPeriod").textContent = snapshot.period_label || "-";
+    qs("#kpiLastUpdated").textContent = new Date().toLocaleDateString("ja-JP");
   }
   renderClusterFilterPills(snapshot);
   renderDensityMap(snapshot);
   renderMonthlyAndTerms(snapshot);
   renderPapersTable();
+  updateActiveFiltersBar();
   if (snapshot?.points?.length > 0 && !state.selectedPaperId) {
     selectPaper(snapshot.points[0], false);
   }
 }
 
-/* ==================== TAB B: AI Advisor & Training Studio ==================== */
+/* ==================== TAB 2: 学習する (AI Advisor & Training Setup) ==================== */
 
 function renderMarkdownLite(text) {
   return escapeHtml(text)
@@ -426,36 +610,52 @@ function appendChat(role, text) {
   log.scrollTop = log.scrollHeight;
 }
 
-function selectAlgoCard(method, markRecommended = false) {
+function selectAlgoMethod(method, markRecommended = false) {
   qs("#methodSelect").value = method;
-  qsa(".algo-card").forEach((card) => {
-    card.classList.toggle("active", card.dataset.method === method);
-  });
+  const radio = qs(`input[name="rlMethodRadio"][value="${method}"]`);
+  if (radio) radio.checked = true;
+
   if (markRecommended) {
     ["DAPG", "RLPD", "AWAC"].forEach((m) => {
       const badge = qs(`#recBadge-${m}`);
       if (badge) badge.classList.toggle("hidden", m !== method);
     });
   }
+  updatePreflightPreview();
 }
 
 function populateMocaps(mocaps) {
+  state.mocapsList = mocaps || [];
   const sel = qs("#mocapSelect");
   const prev = sel.value;
-  sel.innerHTML = (mocaps || [])
+  sel.innerHTML = state.mocapsList
     .map(
       (m) =>
-        `<option value="${escapeAttr(m.mocap_id)}">${escapeHtml(m.name)} (${m.frames} frames / ${m.fps}Hz)</option>`
+        `<option value="${escapeAttr(m.mocap_id)}">${escapeHtml(m.name)} (${m.frames}フレーム / ${m.fps}Hz)</option>`
     )
     .join("");
   if (prev && Array.from(sel.options).some((o) => o.value === prev)) {
     sel.value = prev;
   }
+  updatePreflightPreview();
+}
+
+function updatePreflightPreview() {
+  const mVal = qs("#methodSelect")?.value || "DAPG";
+  const selMocapOpt = qs("#mocapSelect")?.selectedOptions?.[0];
+  const mocapName = selMocapOpt ? selMocapOpt.text.split(" (")[0] : "-";
+  const epochs = qs("#epochsInput")?.value || "25";
+  const smooth = qs("#smoothWeightInput")?.value || "0.06";
+
+  if (qs("#previewMethod")) qs("#previewMethod").textContent = mVal;
+  if (qs("#previewMocap")) qs("#previewMocap").textContent = mocapName;
+  if (qs("#previewEpochs")) qs("#previewEpochs").textContent = `${epochs} 回`;
+  if (qs("#previewSmooth")) qs("#previewSmooth").textContent = smooth;
 }
 
 function applyConfigToForm(cfg, prevCfg = null) {
   if (!cfg) return;
-  if (cfg.method) selectAlgoCard(cfg.method, true);
+  if (cfg.method) selectAlgoMethod(cfg.method, true);
 
   const map = [
     ["epochs", "#epochsInput"],
@@ -478,23 +678,53 @@ function applyConfigToForm(cfg, prevCfg = null) {
       }
     }
   });
-  qs("#paramDiffHint").classList.remove("hidden");
-  showToast(`AI推奨設定（${cfg.method}）をフォームに反映しました`);
+  updatePreflightPreview();
+  showToast(`AI推奨設定 (${cfg.method}) をフォームへ反映しました`);
 }
 
-/* ==================== TAB C: MuJoCo Verification, Graphs & Retrain ==================== */
+async function askAdvisorQuestion(q) {
+  if (!q) return;
+  showInlineError("#advisorErrorBanner", "");
+  appendChat("user", q);
+  qs("#advisorQuestion").value = "";
+  setBtnLoading("#btnAskAdvisor", true, "相談中...");
+
+  try {
+    const res = await apiJson("/api/advisor/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: q, mocap_id: qs("#mocapSelect").value }),
+    });
+    qs("#advisorEngineBadge").textContent = res.engine;
+    appendChat("ai", res.reply);
+    state.suggestedConfig = res.recommended_config;
+    qs("#suggestedMethodText").textContent = res.recommended_method;
+    qs("#applySuggestionWrap").classList.remove("hidden");
+    selectAlgoMethod(res.recommended_method, true);
+    updateStepStatus(1, "相談済", "state-done");
+  } catch (err) {
+    showInlineError("#advisorErrorBanner", `AI相談の送信に失敗しました: ${err.message}。再度お試しください。`);
+  } finally {
+    setBtnLoading("#btnAskAdvisor", false);
+  }
+}
+
+/* ==================== TAB 3: 結果を評価 (MuJoCo Evaluation & Retrain) ==================== */
 
 function populateReports(reports) {
   state.reportsList = reports || [];
   const sel = qs("#reportSelect");
+  const prevVal = sel.value;
   sel.innerHTML = state.reportsList
     .map(
       (r) =>
-        `<option value="${escapeAttr(r.run_id)}">${escapeHtml(r.run_id)} | ${escapeHtml(r.method)} (${escapeHtml(
-          r.mocap_id
-        )}) | 成功率 ${((r.success_rate || 0) * 100).toFixed(1)}%</option>`
+        `<option value="${escapeAttr(r.run_id)}">${escapeHtml(r.run_id)} | ${escapeHtml(r.method)} | 成功率 ${((r.success_rate || 0) * 100).toFixed(1)}%</option>`
     )
     .join("");
+
+  if (prevVal && Array.from(sel.options).some((o) => o.value === prevVal)) {
+    sel.value = prevVal;
+  }
 
   const tbody = qs("#reportsComparisonBody");
   tbody.innerHTML = state.reportsList
@@ -502,7 +732,7 @@ function populateReports(reports) {
       const isCur = state.currentReport && state.currentReport.run_id === r.run_id ? "selected-row" : "";
       const sr = ((r.success_rate || 0) * 100).toFixed(1);
       return `
-      <tr class="${isCur}" data-runid="${escapeAttr(r.run_id)}">
+      <tr class="${isCur}" data-runid="${escapeAttr(r.run_id)}" tabindex="0" role="button" aria-label="Run ${escapeAttr(r.run_id)}">
         <td><code>${escapeHtml(r.run_id)}</code></td>
         <td><strong>${escapeHtml(r.method)}</strong></td>
         <td>${escapeHtml(r.mocap_id)}</td>
@@ -511,20 +741,31 @@ function populateReports(reports) {
         <td>${r.tracking_score ?? "-"}/100</td>
         <td>${r.smoothness_score ?? "-"}/100</td>
         <td>${Number(r.train_loss || 0).toFixed(4)} / ${Number(r.val_loss || 0).toFixed(4)}</td>
-        <td>${r.overfitting_detected ? '<span class="pill pill-warn">要注意</span>' : '<span class="pill pill-ok">正常</span>'}</td>
+        <td>${r.overfitting_detected ? '<span class="pill pill-warn">⚠ 要注意</span>' : '<span class="pill pill-ok">✔ 正常</span>'}</td>
         <td><button class="btn btn-secondary btn-xs">表示</button></td>
       </tr>`;
     })
     .join("");
 
   tbody.querySelectorAll("tr").forEach((tr) => {
-    tr.addEventListener("click", async () => {
+    const handleLoad = async () => {
       const runId = tr.dataset.runid;
       if (!runId) return;
       qs("#reportSelect").value = runId;
-      const rep = await apiJson(`/api/runs/${runId}/report`);
-      await renderReport(rep);
-      showToast(`レポート ${runId} を読み込みました`);
+      try {
+        const rep = await apiJson(`/api/runs/${runId}/report`);
+        await renderReport(rep);
+        showToast(`レポート ${runId} を表示しました`);
+      } catch (err) {
+        showToast(`読込エラー: ${err.message}`);
+      }
+    };
+    tr.addEventListener("click", handleLoad);
+    tr.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleLoad();
+      }
     });
   });
 }
@@ -536,14 +777,31 @@ async function renderReport(report) {
   const lastM = history[history.length - 1] || {};
   const d = report.diagnostics || {};
 
-  // Update KPI strip
-  qs("#evalKpiMethod").textContent = `${report.config.method} / ${report.config.mocap_id}`;
+  // Update Run Meta Context Header
+  qs("#evalRunId").textContent = report.run_id;
+  qs("#evalMethod").textContent = report.config.method;
+  qs("#evalMocap").textContent = report.config.mocap_id;
+  qs("#evalCreatedAt").textContent = report.created_at ? new Date(report.created_at).toLocaleString("ja-JP") : "-";
+
+  // Update KPI Score Grid
   qs("#evalKpiSuccess").textContent = `${((lastM.task_success_rate || 0) * 100).toFixed(1)}%`;
-  qs("#evalKpiTracking").textContent = `${d.tracking_score ?? "-"} / 100`;
-  qs("#evalKpiSmooth").textContent = `${d.smoothness_score ?? "-"} / 100`;
-  qs("#evalKpiOverfit").textContent = d.overfitting_detected
-    ? `検出 (Gap ${d.overfitting_gap})`
-    : `問題なし (Gap ${d.overfitting_gap})`;
+  qs("#evalKpiTracking").textContent = `${d.tracking_score ?? "-"} 点`;
+  qs("#evalKpiSmooth").textContent = `${d.smoothness_score ?? "-"} 点`;
+  qs("#evalKpiOverfit").textContent = d.overfitting_detected ? "⚠ 検出あり" : "✔ 正常";
+  qs("#evalKpiOverfitGap").textContent = `乖離幅: ${d.overfitting_gap || "0.0000"}`;
+
+  // Update Diagnostics Details
+  qs("#diagnosticsDetails").innerHTML = `
+    <p style="margin: 0 0 8px; font-weight: 600; font-size: 1rem; color: #ffffff;">
+      総合判定: ${escapeHtml(d.summary_ja || "正常に完了しました。")}
+    </p>
+    <div style="margin-top: 10px;">
+      <span style="font-weight: 600; font-size: 0.875rem; color: var(--text-muted);">AIからの推奨改善アクション:</span>
+      <ul style="margin: 6px 0 0; padding-left: 20px;">
+        ${(d.recommended_adjustments || []).map((a) => `<li style="margin-bottom: 4px;">${escapeHtml(a)}</li>`).join("")}
+      </ul>
+    </div>
+  `;
 
   // Video
   const vid = qs("#mujocoVideo");
@@ -551,15 +809,16 @@ async function renderReport(report) {
   vid.src = vidUrl;
   qs("#btnDownloadVideo").href = report.video_local_url;
 
+  // Dark Plotly layout with 13-14px font
   const epochs = history.map((m) => m.epoch);
   const darkLayout = (xTitle, yTitle, extra = {}) => ({
-    paper_bgcolor: "#080e18",
-    plot_bgcolor: "#080e18",
-    font: { color: "#ebf1fa", size: 11 },
-    margin: { l: 48, r: 20, t: 18, b: 42 },
-    xaxis: { title: xTitle, gridcolor: "#1e293b" },
-    yaxis: { title: yTitle, gridcolor: "#1e293b", ...extra },
-    legend: { orientation: "h", y: 1.12 },
+    paper_bgcolor: "#090d16",
+    plot_bgcolor: "#090d16",
+    font: { color: "#f1f5f9", size: 13 },
+    margin: { l: 52, r: 20, t: 20, b: 46 },
+    xaxis: { title: xTitle, gridcolor: "#1e293b", tickfont: { size: 12 }, titlefont: { size: 13 } },
+    yaxis: { title: yTitle, gridcolor: "#1e293b", tickfont: { size: 12 }, titlefont: { size: 13 }, ...extra },
+    legend: { orientation: "h", y: 1.14, font: { size: 13 } },
   });
 
   // 1. Loss Plot
@@ -583,7 +842,7 @@ async function renderReport(report) {
         line: { color: "#f97316", width: 2.5, dash: "dot" },
       },
     ],
-    darkLayout("Epoch", "Loss"),
+    darkLayout("Epoch (エポック)", "Loss (損失)"),
     { responsive: true, displayModeBar: false }
   );
 
@@ -609,11 +868,11 @@ async function renderReport(report) {
         marker: { color: "rgba(59,130,246,0.22)" },
       },
     ],
-    darkLayout("Epoch", "Success Rate (%)", { range: [0, 105] }),
+    darkLayout("Epoch (エポック)", "成功率 (%)", { range: [0, 105] }),
     { responsive: true, displayModeBar: false }
   );
 
-  // 3. Episode Return Curve (Raw, Moving Avg, Peak)
+  // 3. Episode Return Curve
   const returns = history.map((m) => m.mean_return);
   const movAvg = returns.map((_, i) => {
     const slice = returns.slice(Math.max(0, i - 3), i + 1);
@@ -626,7 +885,7 @@ async function renderReport(report) {
       {
         type: "scatter",
         mode: "lines",
-        name: "Raw Episode Return",
+        name: "エピソード累積報酬",
         x: epochs,
         y: returns,
         line: { color: "rgba(96,165,250,0.55)", width: 1.5 },
@@ -634,7 +893,7 @@ async function renderReport(report) {
       {
         type: "scatter",
         mode: "lines+markers",
-        name: "Moving Average Return",
+        name: "移動平均リターン",
         x: epochs,
         y: movAvg,
         line: { color: "#ef4444", width: 3 },
@@ -642,38 +901,21 @@ async function renderReport(report) {
       {
         type: "scatter",
         mode: "lines",
-        name: `Peak Return (${peak.toFixed(1)})`,
+        name: `最高リターン (${peak.toFixed(1)})`,
         x: epochs,
         y: epochs.map(() => peak),
         line: { color: "#fde047", width: 1.5, dash: "dash" },
       },
     ],
-    darkLayout("Epoch", "Cumulative Return"),
+    darkLayout("Epoch (エポック)", "累積報酬"),
     { responsive: true, displayModeBar: false }
   );
 
-  // Diagnostics Box
-  qs("#diagnosticsBox").innerHTML = `
-    <div class="diag-pills">
-      <span class="pill ${d.follows_human_motion ? "diag-ok" : "diag-warn"}">
-        追随性: ${d.tracking_score}/100 (${d.follows_human_motion ? "良好" : "要改善"})
-      </span>
-      <span class="pill ${d.is_smooth ? "diag-ok" : "diag-warn"}">
-        滑らかさ: ${d.smoothness_score}/100 (${d.is_smooth ? "滑らか" : "振動あり"})
-      </span>
-      <span class="pill ${!d.overfitting_detected ? "diag-ok" : "diag-warn"}">
-        過学習: ${d.overfitting_detected ? "検出あり" : "なし"} (Val-Train差 ${d.overfitting_gap})
-      </span>
-    </div>
-    <p><strong>総合判定:</strong> ${escapeHtml(d.summary_ja)}</p>
-    <div class="muted" style="margin-bottom:4px;">AI推奨アクション:</div>
-    <ul style="margin:0; padding-left:18px;">
-      ${(d.recommended_adjustments || []).map((a) => `<li>${escapeHtml(a)}</li>`).join("")}
-    </ul>
-  `;
-
   // Highlight active row in comparison table
   populateReports(state.reportsList);
+
+  // Update Stepper state
+  updateStepStatus(3, "確認中", "state-current");
 
   // Load 3D Frames & Joint Tracking Plot
   try {
@@ -729,7 +971,7 @@ function renderJointTrackingPlot() {
       {
         type: "scatter",
         mode: "lines",
-        name: "人間お手本 MoCap (Reference)",
+        name: "人間のお手本 MoCap",
         x: steps,
         y: refVals,
         line: { color: "#10b981", width: 2.5, dash: "dash" },
@@ -737,26 +979,26 @@ function renderJointTrackingPlot() {
       {
         type: "scatter",
         mode: "lines",
-        name: "ロボット実軌道 (Policy)",
+        name: "ロボット実測軌道",
         x: steps,
         y: polVals,
         line: { color: "#f97316", width: 2.5 },
       },
     ],
     {
-      paper_bgcolor: "#080e18",
-      plot_bgcolor: "#080e18",
-      font: { color: "#ebf1fa", size: 11 },
-      margin: { l: 48, r: 16, t: 18, b: 42 },
-      xaxis: { title: "Simulation Step", gridcolor: "#1e293b" },
-      yaxis: { title: "Joint Angle (rad)", gridcolor: "#1e293b" },
-      legend: { orientation: "h", y: 1.12 },
+      paper_bgcolor: "#090d16",
+      plot_bgcolor: "#090d16",
+      font: { color: "#f1f5f9", size: 13 },
+      margin: { l: 52, r: 16, t: 20, b: 46 },
+      xaxis: { title: "シミュレーションステップ", gridcolor: "#1e293b", tickfont: { size: 12 } },
+      yaxis: { title: "関節角度 (rad)", gridcolor: "#1e293b", tickfont: { size: 12 } },
+      legend: { orientation: "h", y: 1.14, font: { size: 13 } },
     },
     { responsive: true, displayModeBar: false }
   );
 }
 
-/* ==================== Three.js 3D Viewer with Orbit & Dual Skeleton ==================== */
+/* ==================== Three.js 3D Viewer ==================== */
 
 const BONE_LINKS = [
   ["pelvis", "torso"],
@@ -777,10 +1019,10 @@ function initThreeIfNeeded() {
   if (state.threeCtx || typeof THREE === "undefined") return;
   const container = qs("#threeContainer");
   const w = container.clientWidth || 540;
-  const h = container.clientHeight || 320;
+  const h = container.clientHeight || 340;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x070b12);
+  scene.background = new THREE.Color(0x060a12);
 
   const camera = new THREE.PerspectiveCamera(44, w / h, 0.1, 100);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -788,7 +1030,7 @@ function initThreeIfNeeded() {
   container.innerHTML = "";
   container.appendChild(renderer.domElement);
 
-  const grid = new THREE.GridHelper(16, 32, 0x3b82f6, 0x1e293b);
+  const grid = new THREE.GridHelper(16, 32, 0x2563eb, 0x1e293b);
   scene.add(grid);
   scene.add(new THREE.AmbientLight(0xffffff, 0.85));
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
@@ -797,7 +1039,7 @@ function initThreeIfNeeded() {
 
   const allNodes = Array.from(new Set(BONE_LINKS.flat()));
 
-  // Policy Skeleton (Orange/Blue solid)
+  // Policy Skeleton (Orange)
   const policyJoints = {};
   const jointGeo = new THREE.SphereGeometry(0.052, 16, 16);
   const jointMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
@@ -818,7 +1060,7 @@ function initThreeIfNeeded() {
     return line;
   });
 
-  // Reference Human Skeleton (Emerald green ghost)
+  // Reference Human Skeleton (Green Ghost)
   const refGroup = new THREE.Group();
   scene.add(refGroup);
   const refJoints = {};
@@ -903,7 +1145,6 @@ function initThreeIfNeeded() {
         }
       });
 
-      // Offset reference skeleton slightly in lateral Z (0.35m) so both are clearly visible side-by-side & overlaid
       const zOffset = 0.32;
       Object.entries(bodiesRef).forEach(([k, pos]) => {
         if (refJoints[k]) refJoints[k].position.set(pos[0], pos[2], -pos[1] - zOffset);
@@ -938,45 +1179,35 @@ function resizeThree() {
   if (!state.threeCtx) return;
   const container = qs("#threeContainer");
   const w = container.clientWidth || 540;
-  const h = container.clientHeight || 320;
+  const h = container.clientHeight || 340;
   state.threeCtx.camera.aspect = w / h;
   state.threeCtx.camera.updateProjectionMatrix();
   state.threeCtx.renderer.setSize(w, h);
 }
 
-/* ==================== Helpers & Bootstrap ==================== */
-
-function escapeHtml(str) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-function escapeAttr(str) {
-  return escapeHtml(str).replace(/'/g, "&#39;");
-}
-
-async function askAdvisorQuestion(q) {
-  if (!q) return;
-  appendChat("user", q);
-  qs("#advisorQuestion").value = "";
-  const res = await apiJson("/api/advisor/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question: q, mocap_id: qs("#mocapSelect").value }),
-  });
-  qs("#advisorEngineBadge").textContent = res.engine;
-  appendChat("ai", res.reply);
-  state.suggestedConfig = res.recommended_config;
-  qs("#suggestedMethodText").textContent = res.recommended_method;
-  qs("#applySuggestionWrap").classList.remove("hidden");
-  selectAlgoCard(res.recommended_method, true);
-}
+/* ==================== Initialization & Event Binding ==================== */
 
 async function bootstrap() {
   initNavigation();
 
+  // Support ?tab=papers | train | eval from URL query
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTab = urlParams.get("tab") || "papers";
+  switchTab(initialTab);
+
+  // Check backend health
+  try {
+    const health = await apiJson("/api/health");
+    if (health.status === "ok") {
+      qs("#healthDot").className = "status-dot status-ok";
+      qs("#healthStatus").textContent = "正常稼働中 (HTTP 200)";
+    }
+  } catch (err) {
+    qs("#healthDot").className = "status-dot status-warn";
+    qs("#healthStatus").textContent = "オフライン";
+  }
+
+  // Load Dashboard Data
   try {
     const init = await apiJson("/api/dashboard-init");
     applyPaperSnapshot(init.text_mining, init.papers);
@@ -986,18 +1217,35 @@ async function bootstrap() {
       await renderReport(init.latest_report);
     }
   } catch (err) {
-    qs("#healthStatus").textContent = "Init Error";
-    console.error(err);
+    console.error("Dashboard init error:", err);
+    showToast("データの読み込みに失敗しました。再読み込みしてください。");
   }
 
-  // Tab A events
+  // --- Tab 1 Events ---
   qs("#chkSim2RealOnly").addEventListener("change", (e) => {
     state.sim2RealOnly = e.target.checked;
     renderDensityMap(state.snapshot);
     renderPapersTable();
+    updateActiveFiltersBar();
   });
 
-  qs("#btnResetMapFilter").addEventListener("click", () => {
+  qs("#paperSearchInput").addEventListener("input", (e) => {
+    state.searchQuery = e.target.value.trim();
+    renderDensityMap(state.snapshot);
+    renderPapersTable();
+    updateActiveFiltersBar();
+  });
+
+  const clearSearchHandler = () => {
+    qs("#paperSearchInput").value = "";
+    state.searchQuery = "";
+    renderDensityMap(state.snapshot);
+    renderPapersTable();
+    updateActiveFiltersBar();
+  };
+  qs("#btnClearPaperSearch").addEventListener("click", clearSearchHandler);
+
+  const resetAllFiltersHandler = () => {
     state.activeClusterFilter = null;
     state.sim2RealOnly = false;
     state.searchQuery = "";
@@ -1006,42 +1254,59 @@ async function bootstrap() {
     renderClusterFilterPills(state.snapshot);
     renderDensityMap(state.snapshot);
     renderPapersTable();
-  });
-
-  qs("#paperSearchInput").addEventListener("input", (e) => {
-    state.searchQuery = e.target.value.trim();
-    renderDensityMap(state.snapshot);
-    renderPapersTable();
-  });
-
-  qs("#btnClearPaperSearch").addEventListener("click", () => {
-    qs("#paperSearchInput").value = "";
-    state.searchQuery = "";
-    renderDensityMap(state.snapshot);
-    renderPapersTable();
-  });
+    updateActiveFiltersBar();
+  };
+  qs("#btnResetMapFilter").addEventListener("click", resetAllFiltersHandler);
+  qs("#btnResetAllFilters").addEventListener("click", resetAllFiltersHandler);
+  qs("#btnEmptyReset").addEventListener("click", resetAllFiltersHandler);
 
   qs("#btnScrape").addEventListener("click", async () => {
+    showInlineError("#scrapeErrorBanner", "");
     const kws = qs("#keywordsInput")
       .value.split(",")
       .map((s) => s.trim())
       .filter(Boolean);
     const maxPer = Number(qs("#maxPerKw").value || 6);
+
+    if (kws.length === 0) {
+      showInlineError("#scrapeErrorBanner", "検索キーワードを1つ以上入力してください。");
+      return;
+    }
+
+    setBtnLoading("#btnScrape", true, "更新中...");
     const banner = qs("#scrapeJobBanner");
     banner.classList.remove("hidden");
-    const { job_id } = await apiJson("/api/papers/scrape", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keywords: kws, max_per_keyword: maxPer }),
-    });
-    pollJob(job_id, banner, qs("#scrapeJobText"), qs("#scrapeProgressFill"), async () => {
-      const latest = await apiJson("/api/papers/latest");
-      applyPaperSnapshot(latest.text_mining, latest.papers);
-      showToast("論文データの収集・テキストマイニングが完了しました");
-    });
+
+    try {
+      const { job_id } = await apiJson("/api/papers/scrape", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keywords: kws, max_per_keyword: maxPer }),
+      });
+      pollJob(
+        job_id,
+        banner,
+        qs("#scrapeJobText"),
+        qs("#scrapeProgressFill"),
+        async () => {
+          setBtnLoading("#btnScrape", false);
+          const latest = await apiJson("/api/papers/latest");
+          applyPaperSnapshot(latest.text_mining, latest.papers);
+          showToast("論文データの収集・テキストマイニングが完了しました");
+        },
+        (errMsg) => {
+          setBtnLoading("#btnScrape", false);
+          showInlineError("#scrapeErrorBanner", `論文更新エラー: ${errMsg}`);
+        }
+      );
+    } catch (err) {
+      setBtnLoading("#btnScrape", false);
+      banner.classList.add("hidden");
+      showInlineError("#scrapeErrorBanner", `リクエスト送信エラー: ${err.message}`);
+    }
   });
 
-  // Tab B events: One-click question chips & Algo cards
+  // --- Tab 2 Events ---
   qsa(".chip-btn").forEach((btn) => {
     btn.addEventListener("click", () => askAdvisorQuestion(btn.dataset.ask));
   });
@@ -1057,40 +1322,73 @@ async function bootstrap() {
     applyConfigToForm(state.suggestedConfig);
   });
 
-  qsa(".algo-card").forEach((card) => {
-    card.addEventListener("click", () => selectAlgoCard(card.dataset.method, false));
+  // Algorithm Radios
+  qsa('input[name="rlMethodRadio"]').forEach((radio) => {
+    radio.addEventListener("change", (e) => {
+      selectAlgoMethod(e.target.value, false);
+    });
   });
+
+  qs("#mocapSelect").addEventListener("change", updatePreflightPreview);
+  qs("#epochsInput").addEventListener("input", updatePreflightPreview);
+  qs("#smoothWeightInput").addEventListener("input", updatePreflightPreview);
 
   qs("#btnUploadMocap").addEventListener("click", async () => {
     const file = qs("#mocapFile").files[0];
     if (!file) return showToast("CSV / NPZ / BVH ファイルを選択してください");
+    setBtnLoading("#btnUploadMocap", true, "送信中...");
     const fd = new FormData();
     fd.append("file", file);
-    const res = await apiJson("/api/mocap/upload", { method: "POST", body: fd });
-    const init = await apiJson("/api/dashboard-init");
-    populateMocaps(init.mocaps);
-    qs("#mocapSelect").value = res.mocap_id;
-    showToast(`モーションデータをS3へ保存しました: ${res.name} (${res.frames} frames)`);
+    try {
+      const res = await apiJson("/api/mocap/upload", { method: "POST", body: fd });
+      const init = await apiJson("/api/dashboard-init");
+      populateMocaps(init.mocaps);
+      qs("#mocapSelect").value = res.mocap_id;
+      updatePreflightPreview();
+      showToast(`モーションデータをS3へ保存しました: ${res.name}`);
+    } catch (err) {
+      showToast(`アップロードエラー: ${err.message}`);
+    } finally {
+      setBtnLoading("#btnUploadMocap", false);
+    }
   });
 
   qs("#btnUploadXml").addEventListener("click", async () => {
     const file = qs("#robotXmlFile").files[0];
     if (!file) return showToast("MJCF (.xml) ファイルを選択してください");
+    setBtnLoading("#btnUploadXml", true, "登録中...");
     const fd = new FormData();
     fd.append("file", file);
-    const res = await apiJson("/api/robot-xml/upload", { method: "POST", body: fd });
-    qs("#robotXmlName").value = res.robot_xml_name;
-    qs("#currentXmlLabel").textContent = `現在: ${res.robot_xml_name} (S3保存済み)`;
-    showToast(`カスタムロボットXMLをS3へ保存しました: ${res.s3_key}`);
+    try {
+      const res = await apiJson("/api/robot-xml/upload", { method: "POST", body: fd });
+      qs("#robotXmlName").value = res.robot_xml_name;
+      qs("#currentXmlLabel").textContent = `現在: ${res.robot_xml_name} (S3登録済)`;
+      showToast(`カスタムロボットXMLをS3へ保存しました: ${res.s3_key}`);
+    } catch (err) {
+      showToast(`XML登録エラー: ${err.message}`);
+    } finally {
+      setBtnLoading("#btnUploadXml", false);
+    }
   });
 
   qs("#btnStartTrain").addEventListener("click", async () => {
+    showInlineError("#trainErrorBanner", "");
+    const epochs = Number(qs("#epochsInput").value);
+    if (isNaN(epochs) || epochs < 5 || epochs > 120) {
+      showInlineError("#trainErrorBanner", "エポック数は 5 から 120 の範囲で指定してください。");
+      qs("#epochsInput").focus();
+      return;
+    }
+
+    setBtnLoading("#btnStartTrain", true, "学習実行中...");
     const banner = qs("#trainJobBanner");
     banner.classList.remove("hidden");
+    updateStepStatus(2, "実行中", "state-current");
+
     const payload = {
       method: qs("#methodSelect").value,
       mocap_id: qs("#mocapSelect").value,
-      epochs: Number(qs("#epochsInput").value),
+      epochs,
       learning_rate: Number(qs("#lrInput").value),
       bc_weight: Number(qs("#bcWeightInput").value),
       smoothness_weight: Number(qs("#smoothWeightInput").value),
@@ -1098,28 +1396,57 @@ async function bootstrap() {
       entropy_coef: Number(qs("#entropyInput").value),
       robot_xml_name: qs("#robotXmlName").value,
     };
-    const { job_id } = await apiJson("/api/training/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    pollJob(job_id, banner, qs("#trainJobText"), qs("#trainProgressFill"), async (report) => {
-      const init = await apiJson("/api/dashboard-init");
-      populateReports(init.reports);
-      qs("#reportSelect").value = report.run_id;
-      await renderReport(report);
-      switchTab("eval", "#sectionStep3");
-      showToast(`学習が完了しました (${report.run_id})！MuJoCo動画とグラフを表示します`);
-    });
+
+    try {
+      const { job_id } = await apiJson("/api/training/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      pollJob(
+        job_id,
+        banner,
+        qs("#trainJobText"),
+        qs("#trainProgressFill"),
+        async (report) => {
+          setBtnLoading("#btnStartTrain", false);
+          updateStepStatus(2, "完了", "state-done");
+          const init = await apiJson("/api/dashboard-init");
+          populateReports(init.reports);
+          qs("#reportSelect").value = report.run_id;
+          await renderReport(report);
+          switchTab("eval", "#sectionStep3");
+          showToast(`学習が完了しました (${report.run_id})！結果を表示します`);
+        },
+        (errMsg) => {
+          setBtnLoading("#btnStartTrain", false);
+          updateStepStatus(2, "エラー", "");
+          showInlineError("#trainErrorBanner", `学習エラー: ${errMsg}`);
+        }
+      );
+    } catch (err) {
+      setBtnLoading("#btnStartTrain", false);
+      banner.classList.add("hidden");
+      updateStepStatus(2, "エラー", "");
+      showInlineError("#trainErrorBanner", `開始リクエスト失敗: ${err.message}`);
+    }
   });
 
-  // Tab C events
+  // --- Tab 3 Events ---
   qs("#btnLoadReport").addEventListener("click", async () => {
     const runId = qs("#reportSelect").value;
     if (!runId) return;
-    const report = await apiJson(`/api/runs/${runId}/report`);
-    await renderReport(report);
-    showToast(`レポート ${runId} を表示しました`);
+    setBtnLoading("#btnLoadReport", true, "読込中...");
+    try {
+      const report = await apiJson(`/api/runs/${runId}/report`);
+      await renderReport(report);
+      showToast(`レポート ${runId} を表示しました`);
+    } catch (err) {
+      showToast(`読込エラー: ${err.message}`);
+    } finally {
+      setBtnLoading("#btnLoadReport", false);
+    }
   });
 
   qsa(".speed-vid-btn").forEach((btn) => {
@@ -1194,43 +1521,127 @@ async function bootstrap() {
     });
   });
 
-  qs("#btnRetrainWithAI").addEventListener("click", async () => {
+  // Step 4: AI Retrain Plan Creation (Step 1 of 2: Does NOT train yet!)
+  qs("#btnCreateRetrainPlan").addEventListener("click", async () => {
+    showInlineError("#retrainErrorBanner", "");
     const instr = qs("#retrainInstruction").value.trim();
-    if (!instr) return showToast("評価コメントまたは上の評価チップを選択してください");
+    if (!instr) {
+      showInlineError("#retrainErrorBanner", "評価コメントまたは指示テンプレートを選択してください。");
+      return;
+    }
+
+    setBtnLoading("#btnCreateRetrainPlan", true, "提案作成中...");
     const curCfg = state.currentReport ? state.currentReport.config : {};
+
+    try {
+      const res = await apiJson("/api/advisor/retrain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instruction: instr,
+          base_method: curCfg.method || qs("#methodSelect").value,
+          mocap_id: curCfg.mocap_id || qs("#mocapSelect").value,
+          epochs: curCfg.epochs || Number(qs("#epochsInput").value),
+          learning_rate: curCfg.learning_rate || Number(qs("#lrInput").value),
+          bc_weight: curCfg.bc_weight ?? Number(qs("#bcWeightInput").value),
+          entropy_coef: curCfg.entropy_coef ?? Number(qs("#entropyInput").value),
+          smoothness_weight: curCfg.smoothness_weight ?? Number(qs("#smoothWeightInput").value),
+          reward_tracking_weight: curCfg.reward_tracking_weight ?? Number(qs("#trackWeightInput").value),
+          auto_start: false, // Pure proposal generation!
+        }),
+      });
+
+      state.pendingRetrainConfig = res.updated_config;
+      qs("#retrainEngineBadge").textContent = res.engine;
+      qs("#retrainExplanation").innerHTML = renderMarkdownLite(res.reply);
+
+      // Render Diff Table
+      const paramLabels = {
+        method: "学習アルゴリズム",
+        epochs: "エポック数",
+        learning_rate: "学習率",
+        bc_weight: "模倣正則化重み",
+        smoothness_weight: "滑らかさ重み",
+        reward_tracking_weight: "追随報酬重み",
+        entropy_coef: "探索エントロピー",
+      };
+
+      const diffRows = [];
+      const prev = res.previous_config || {};
+      const next = res.updated_config || {};
+      Object.keys(next).forEach((k) => {
+        if (paramLabels[k] && prev[k] !== undefined) {
+          const isChanged = prev[k] !== next[k];
+          diffRows.push(`
+            <tr style="${isChanged ? 'background: rgba(37,99,235,0.15);' : ''}">
+              <td><strong>${paramLabels[k]}</strong></td>
+              <td>${prev[k]}</td>
+              <td><strong style="color: ${isChanged ? '#34d399' : 'inherit'};">${next[k]}</strong></td>
+              <td>${isChanged ? '変更あり' : '維持'}</td>
+            </tr>
+          `);
+        }
+      });
+      qs("#retrainDiffTableBody").innerHTML = diffRows.join("");
+
+      qs("#retrainConfirmBox").classList.remove("hidden");
+      qs("#retrainConfirmBox").scrollIntoView({ behavior: "smooth", block: "start" });
+      updateStepStatus(4, "変更案作成済", "state-current");
+      showToast("AIによるパラメータ変更案を作成しました。確認して実行してください。");
+    } catch (err) {
+      showInlineError("#retrainErrorBanner", `提案作成エラー: ${err.message}`);
+    } finally {
+      setBtnLoading("#btnCreateRetrainPlan", false);
+    }
+  });
+
+  qs("#btnCancelRetrain").addEventListener("click", () => {
+    qs("#retrainConfirmBox").classList.add("hidden");
+    state.pendingRetrainConfig = null;
+    showToast("再学習をキャンセルしました");
+  });
+
+  // Step 4: Execute Confirmed Retrain (Step 2 of 2: Actually runs training!)
+  qs("#btnExecuteRetrainConfirmed").addEventListener("click", async () => {
+    if (!state.pendingRetrainConfig) return;
     const banner = qs("#evalTrainJobBanner");
     banner.classList.remove("hidden");
+    setBtnLoading("#btnExecuteRetrainConfirmed", true, "再学習中...");
+    updateStepStatus(4, "再学習中", "state-current");
 
-    const res = await apiJson("/api/advisor/retrain", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        instruction: instr,
-        base_method: curCfg.method || qs("#methodSelect").value,
-        mocap_id: curCfg.mocap_id || qs("#mocapSelect").value,
-        epochs: curCfg.epochs || Number(qs("#epochsInput").value),
-        learning_rate: curCfg.learning_rate || Number(qs("#lrInput").value),
-        bc_weight: curCfg.bc_weight ?? Number(qs("#bcWeightInput").value),
-        entropy_coef: curCfg.entropy_coef ?? Number(qs("#entropyInput").value),
-        smoothness_weight: curCfg.smoothness_weight ?? Number(qs("#smoothWeightInput").value),
-        reward_tracking_weight: curCfg.reward_tracking_weight ?? Number(qs("#trackWeightInput").value),
-        auto_start: true,
-      }),
-    });
-
-    const rbox = qs("#retrainResponseBox");
-    rbox.classList.remove("hidden");
-    rbox.innerHTML = `<strong>[${escapeHtml(res.engine)}]</strong><br/>${renderMarkdownLite(res.reply)}`;
-    applyConfigToForm(res.updated_config, res.previous_config);
-
-    if (res.job_id) {
-      pollJob(res.job_id, banner, qs("#evalTrainJobText"), qs("#evalTrainProgressFill"), async (report) => {
-        const init = await apiJson("/api/dashboard-init");
-        populateReports(init.reports);
-        qs("#reportSelect").value = report.run_id;
-        await renderReport(report);
-        showToast(`AI再指示による再学習が完了しました (${report.run_id})！`);
+    try {
+      const { job_id } = await apiJson("/api/training/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(state.pendingRetrainConfig),
       });
+
+      pollJob(
+        job_id,
+        banner,
+        qs("#evalTrainJobText"),
+        qs("#evalTrainProgressFill"),
+        async (report) => {
+          setBtnLoading("#btnExecuteRetrainConfirmed", false);
+          qs("#retrainConfirmBox").classList.add("hidden");
+          state.pendingRetrainConfig = null;
+          updateStepStatus(4, "再学習完了", "state-done");
+          const init = await apiJson("/api/dashboard-init");
+          populateReports(init.reports);
+          qs("#reportSelect").value = report.run_id;
+          await renderReport(report);
+          showToast(`再学習が完了しました (${report.run_id})！新結果を表示します`);
+        },
+        (errMsg) => {
+          setBtnLoading("#btnExecuteRetrainConfirmed", false);
+          updateStepStatus(4, "再学習エラー", "");
+          showInlineError("#retrainErrorBanner", `再学習エラー: ${errMsg}`);
+        }
+      );
+    } catch (err) {
+      setBtnLoading("#btnExecuteRetrainConfirmed", false);
+      banner.classList.add("hidden");
+      showInlineError("#retrainErrorBanner", `再学習開始失敗: ${err.message}`);
     }
   });
 
