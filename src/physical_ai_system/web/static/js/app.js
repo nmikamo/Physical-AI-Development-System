@@ -5,6 +5,8 @@ const state = {
   snapshot: null,
   activeClusterFilter: null,
   sim2RealOnly: false,
+  selectedYear: "all",
+  trendViewMode: "yearly",
   searchQuery: "",
   selectedPaperId: null,
   suggestedConfig: null,
@@ -228,11 +230,35 @@ function getFilteredPoints() {
   return state.snapshot.points.filter((pt) => {
     if (state.activeClusterFilter !== null && pt.cluster_id !== state.activeClusterFilter) return false;
     if (state.sim2RealOnly && !pt.sim_to_real) return false;
+    if (state.selectedYear && state.selectedYear !== "all") {
+      const yr = (pt.month_key || "").slice(0, 4);
+      if (yr !== state.selectedYear) return false;
+    }
     if (state.searchQuery) {
       const blob = `${pt.title} ${pt.summary_ja} ${pt.month_key} ${(pt.keywords_matched || []).join(" ")}`.toLowerCase();
       if (!blob.includes(state.searchQuery.toLowerCase())) return false;
     }
     return true;
+  });
+}
+
+function setYearFilter(year) {
+  state.selectedYear = year;
+  qsa(".year-pill").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.year === year);
+  });
+  renderDensityMap(state.snapshot);
+  renderPapersTable();
+  updateActiveFiltersBar();
+  const label = year === "all" ? "全期間 (2020〜)" : `${year}年度`;
+  showToast(`発行年度「${label}」で論文を絞り込みました`);
+}
+
+function initYearFilterPills() {
+  qsa(".year-pill").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setYearFilter(btn.dataset.year || "all");
+    });
   });
 }
 
@@ -242,6 +268,9 @@ function updateActiveFiltersBar() {
   if (!bar || !tagsContainer) return;
 
   const tags = [];
+  if (state.selectedYear && state.selectedYear !== "all") {
+    tags.push(`年度: ${state.selectedYear}年`);
+  }
   if (state.activeClusterFilter !== null) {
     const c = (state.snapshot?.clusters || []).find((x) => x.cluster_id === state.activeClusterFilter);
     tags.push(`クラスタ: ${c ? c.label.replace(/\n/g, "・") : state.activeClusterFilter}`);
@@ -258,7 +287,7 @@ function updateActiveFiltersBar() {
     tagsContainer.innerHTML = "";
   } else {
     bar.classList.remove("hidden");
-    tagsContainer.innerHTML = tags.map((t) => `<span class="filter-tag">${escapeHtml(t)}</span>`).join("");
+    tagsContainer.innerHTML = tags.map((t) => `<span class="active-tag">${escapeHtml(t)}</span>`).join("");
   }
 }
 
@@ -305,14 +334,14 @@ function renderDensityMap(snapshot) {
     z: dg.z_matrix,
     colorscale: "Jet",
     showscale: true,
-    contours: { coloring: "heatmap", showlines: true, labelfont: { size: 10, color: "rgba(255,255,255,0.5)" } },
-    line: { width: 0.6, color: "rgba(255,255,255,0.25)" },
+    contours: { coloring: "heatmap", showlines: true, labelfont: { size: 10, color: "rgba(15,23,42,0.6)" } },
+    line: { width: 0.6, color: "rgba(15,23,42,0.2)" },
     opacity: 0.85,
     hoverinfo: "skip",
     colorbar: {
       title: "研究密度",
-      tickfont: { color: "#f1f5f9", size: 13 },
-      titlefont: { color: "#f1f5f9", size: 13 },
+      tickfont: { color: "#475569", size: 12 },
+      titlefont: { color: "#0f172a", size: 13 },
       thickness: 16,
     },
   };
@@ -330,14 +359,14 @@ function renderDensityMap(snapshot) {
     customdata: list,
     text: list.map(
       (p) =>
-        `<b>${escapeHtml(p.title)}</b><br>公開: ${p.month_key} | ${escapeHtml(p.cluster_label)}<br>👉 クリックで右側に詳細表示`
+        `<b>${escapeHtml(p.title)}</b><br>公開: ${p.month_key} | ${escapeHtml(p.cluster_label)}<br>👉 クリックで詳細表示`
     ),
     hovertemplate: "%{text}<extra></extra>",
     marker: {
       size: 12,
       symbol,
       color,
-      line: { width: 2.0, color: "#090d16" },
+      line: { width: 1.5, color: "#ffffff" },
     },
   });
 
@@ -348,8 +377,8 @@ function renderDensityMap(snapshot) {
       y: c.center_y,
       text: `<b>${c.label.replace(/\n/g, "<br>")}</b>`,
       showarrow: false,
-      bgcolor: "rgba(255, 255, 255, 0.92)",
-      bordercolor: "#1e293b",
+      bgcolor: "rgba(255, 255, 255, 0.95)",
+      bordercolor: "#cbd5e1",
       borderwidth: 1.2,
       borderpad: 5,
       font: { color: "#0f172a", size: 11 },
@@ -358,15 +387,15 @@ function renderDensityMap(snapshot) {
   const layout = {
     title: {
       text: `${snapshot.period_label} | 全${snapshot.total_papers}件 (Sim-to-Real: ${snapshot.sim_to_real_count}件)`,
-      font: { color: "#f1f5f9", size: 14 },
+      font: { color: "#0f172a", size: 14 },
     },
-    paper_bgcolor: "#090d16",
-    plot_bgcolor: "#090d16",
-    font: { color: "#f1f5f9", size: 13 },
+    paper_bgcolor: "#ffffff",
+    plot_bgcolor: "#f8fafc",
+    font: { color: "#334155", size: 13 },
     margin: { l: 25, r: 20, t: 45, b: 35 },
     xaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [-1.18, 1.18] },
     yaxis: { showgrid: false, zeroline: false, showticklabels: false, range: [-1.18, 1.18] },
-    legend: { orientation: "h", y: -0.04, font: { color: "#f1f5f9", size: 13 } },
+    legend: { orientation: "h", y: -0.04, font: { color: "#475569", size: 12 } },
     annotations,
   };
 
@@ -374,8 +403,8 @@ function renderDensityMap(snapshot) {
     el,
     [
       contourTrace,
-      makeScatter(genPts, "シミュレーション研究", "#ffffff", "circle"),
-      makeScatter(simPts, "Sim-to-Real 実機研究", "#fde047", "diamond"),
+      makeScatter(genPts, "シミュレーション研究", "#3b82f6", "circle"),
+      makeScatter(simPts, "Sim-to-Real 実機研究", "#ea580c", "diamond"),
     ],
     layout,
     { responsive: true, displayModeBar: false }
@@ -438,6 +467,94 @@ function selectPaper(paper, scrollToDetail = false) {
   }
 }
 
+function renderYearlyTrendPlot(snapshot) {
+  const yEl = qs("#yearlyTrendPlot");
+  if (!yEl || !snapshot) return;
+
+  const yearly = snapshot.yearly_counts || [];
+  if (yearly.length === 0) {
+    yEl.innerHTML = `<div class="table-empty">年度別データがありません</div>`;
+    return;
+  }
+
+  const years = yearly.map((d) => `${d.year}年`);
+  const simCounts = yearly.map((d) => d.sim_count);
+  const pureSimCounts = yearly.map((d) => Math.max(0, d.count - d.sim_count));
+
+  const traces = [
+    {
+      type: "bar",
+      name: "Sim-to-Real 実機研究",
+      x: years,
+      y: simCounts,
+      marker: { color: "#2563eb", line: { color: "#1d4ed8", width: 1 } },
+      customdata: yearly.map((d) => d.year),
+      hovertemplate: "<b>%{x}</b><br>Sim-to-Real: %{y}件<br>👉 クリックで該当年度に絞り込み<extra></extra>",
+    },
+    {
+      type: "bar",
+      name: "Simulation 研究",
+      x: years,
+      y: pureSimCounts,
+      marker: { color: "#94a3b8", line: { color: "#64748b", width: 1 } },
+      customdata: yearly.map((d) => d.year),
+      hovertemplate: "<b>%{x}</b><br>Simulation: %{y}件<br>👉 クリックで該当年度に絞り込み<extra></extra>",
+    },
+  ];
+
+  const layout = {
+    barmode: "stack",
+    paper_bgcolor: "#ffffff",
+    plot_bgcolor: "#f8fafc",
+    font: { color: "#334155", size: 13 },
+    margin: { l: 45, r: 16, t: 20, b: 45 },
+    xaxis: { title: "発行年度 (2020年〜)", tickfont: { size: 12, color: "#475569" }, titlefont: { size: 13, color: "#1e293b" } },
+    yaxis: { title: "論文数 (件)", gridcolor: "#e2e8f0", tickfont: { size: 12, color: "#475569" }, titlefont: { size: 13, color: "#1e293b" } },
+    legend: { orientation: "h", y: 1.15, font: { size: 12, color: "#475569" } },
+  };
+
+  Plotly.react(yEl, traces, layout, { responsive: true, displayModeBar: false });
+
+  if (!yEl._clickBound) {
+    yEl._clickBound = true;
+    yEl.on("plotly_click", (evt) => {
+      const yr = evt?.points?.[0]?.customdata;
+      if (!yr) return;
+      setYearFilter(String(yr));
+    });
+  }
+}
+
+function initTrendPlotToggle() {
+  const btnYearly = qs("#btnTrendYearly");
+  const btnMonthly = qs("#btnTrendMonthly");
+  const yearlyPlot = qs("#yearlyTrendPlot");
+  const monthlyPlot = qs("#monthlyTrendPlot");
+  const title = qs("#trendPlotTitle");
+
+  if (!btnYearly || !btnMonthly) return;
+
+  btnYearly.addEventListener("click", () => {
+    btnYearly.classList.add("active");
+    btnMonthly.classList.remove("active");
+    yearlyPlot.classList.remove("hidden");
+    monthlyPlot.classList.add("hidden");
+    state.trendViewMode = "yearly";
+    if (title) title.textContent = "年度別 論文推移 (2020年〜)";
+    Plotly.Plots.resize(yearlyPlot);
+  });
+
+  btnMonthly.addEventListener("click", () => {
+    btnMonthly.classList.add("active");
+    btnYearly.classList.remove("active");
+    monthlyPlot.classList.remove("hidden");
+    yearlyPlot.classList.add("hidden");
+    state.trendViewMode = "monthly";
+    if (title) title.textContent = "月別 論文推移";
+    Plotly.Plots.resize(monthlyPlot);
+  });
+}
+
 function renderMonthlyAndTerms(snapshot) {
   const mEl = qs("#monthlyTrendPlot");
   const tEl = qs("#topTermsPlot");
@@ -452,17 +569,17 @@ function renderMonthlyAndTerms(snapshot) {
         type: "bar",
         x: months,
         y: counts,
-        marker: { color: "#2563eb", line: { color: "#60a5fa", width: 1.2 } },
+        marker: { color: "#2563eb", line: { color: "#1d4ed8", width: 1.2 } },
         hovertemplate: "%{x}: %{y}件 (クリックで絞り込み)<extra></extra>",
       },
     ],
     {
-      paper_bgcolor: "#090d16",
-      plot_bgcolor: "#090d16",
-      font: { color: "#f1f5f9", size: 13 },
+      paper_bgcolor: "#ffffff",
+      plot_bgcolor: "#f8fafc",
+      font: { color: "#334155", size: 13 },
       margin: { l: 45, r: 16, t: 16, b: 50 },
-      xaxis: { title: "公開月", tickangle: -30, tickfont: { size: 12 } },
-      yaxis: { title: "論文数", gridcolor: "#1e293b", tickfont: { size: 12 } },
+      xaxis: { title: "公開月", tickangle: -30, tickfont: { size: 12, color: "#475569" }, titlefont: { size: 13, color: "#1e293b" } },
+      yaxis: { title: "論文数", gridcolor: "#e2e8f0", tickfont: { size: 12, color: "#475569" }, titlefont: { size: 13, color: "#1e293b" } },
     },
     { responsive: true, displayModeBar: false }
   );
@@ -495,12 +612,12 @@ function renderMonthlyAndTerms(snapshot) {
       },
     ],
     {
-      paper_bgcolor: "#090d16",
-      plot_bgcolor: "#090d16",
-      font: { color: "#f1f5f9", size: 13 },
+      paper_bgcolor: "#ffffff",
+      plot_bgcolor: "#f8fafc",
+      font: { color: "#334155", size: 13 },
       margin: { l: 140, r: 16, t: 16, b: 40 },
-      xaxis: { title: "TF-IDF 重要度", gridcolor: "#1e293b", tickfont: { size: 12 } },
-      yaxis: { tickfont: { size: 12 } },
+      xaxis: { title: "TF-IDF 重要度", gridcolor: "#e2e8f0", tickfont: { size: 12, color: "#475569" }, titlefont: { size: 13, color: "#1e293b" } },
+      yaxis: { tickfont: { size: 12, color: "#475569" } },
     },
     { responsive: true, displayModeBar: false }
   );
@@ -592,8 +709,9 @@ function applyPaperSnapshot(snapshot, papers) {
     qs("#kpiLastUpdated").textContent = new Date().toLocaleDateString("ja-JP");
   }
   renderClusterFilterPills(snapshot);
-  renderDensityMap(snapshot);
+  renderYearlyTrendPlot(snapshot);
   renderMonthlyAndTerms(snapshot);
+  renderDensityMap(snapshot);
   renderPapersTable();
   updateActiveFiltersBar();
   if (snapshot?.points?.length > 0 && !state.selectedPaperId) {
@@ -802,7 +920,7 @@ async function renderReport(report) {
 
   // Update Diagnostics Details
   qs("#diagnosticsDetails").innerHTML = `
-    <p style="margin: 0 0 8px; font-weight: 600; font-size: 1rem; color: #ffffff;">
+    <p style="margin: 0 0 8px; font-weight: 600; font-size: 1rem; color: var(--text-main);">
       総合判定: ${escapeHtml(d.summary_ja || "正常に完了しました。")}
     </p>
     <div style="margin-top: 10px;">
@@ -819,16 +937,16 @@ async function renderReport(report) {
   vid.src = vidUrl;
   qs("#btnDownloadVideo").href = report.video_local_url;
 
-  // Dark Plotly layout with 13-14px font
+  // Light Plotly layout with 13-14px font
   const epochs = history.map((m) => m.epoch);
-  const darkLayout = (xTitle, yTitle, extra = {}) => ({
-    paper_bgcolor: "#090d16",
-    plot_bgcolor: "#090d16",
-    font: { color: "#f1f5f9", size: 13 },
+  const lightLayout = (xTitle, yTitle, extra = {}) => ({
+    paper_bgcolor: "#ffffff",
+    plot_bgcolor: "#f8fafc",
+    font: { color: "#334155", size: 13 },
     margin: { l: 52, r: 20, t: 20, b: 46 },
-    xaxis: { title: xTitle, gridcolor: "#1e293b", tickfont: { size: 12 }, titlefont: { size: 13 } },
-    yaxis: { title: yTitle, gridcolor: "#1e293b", tickfont: { size: 12 }, titlefont: { size: 13 }, ...extra },
-    legend: { orientation: "h", y: 1.14, font: { size: 13 } },
+    xaxis: { title: xTitle, gridcolor: "#e2e8f0", tickfont: { size: 12, color: "#64748b" }, titlefont: { size: 13, color: "#1e293b" } },
+    yaxis: { title: yTitle, gridcolor: "#e2e8f0", tickfont: { size: 12, color: "#64748b" }, titlefont: { size: 13, color: "#1e293b" }, ...extra },
+    legend: { orientation: "h", y: 1.14, font: { size: 12, color: "#475569" } },
   });
 
   // 1. Loss Plot
@@ -852,7 +970,7 @@ async function renderReport(report) {
         line: { color: "#f97316", width: 2.5, dash: "dot" },
       },
     ],
-    darkLayout("Epoch (エポック)", "Loss (損失)"),
+    lightLayout("Epoch (エポック)", "Loss (損失)"),
     { responsive: true, displayModeBar: false }
   );
 
@@ -878,7 +996,7 @@ async function renderReport(report) {
         marker: { color: "rgba(59,130,246,0.22)" },
       },
     ],
-    darkLayout("Epoch (エポック)", "成功率 (%)", { range: [0, 105] }),
+    lightLayout("Epoch (エポック)", "成功率 (%)", { range: [0, 105] }),
     { responsive: true, displayModeBar: false }
   );
 
@@ -914,10 +1032,10 @@ async function renderReport(report) {
         name: `最高リターン (${peak.toFixed(1)})`,
         x: epochs,
         y: epochs.map(() => peak),
-        line: { color: "#fde047", width: 1.5, dash: "dash" },
+        line: { color: "#f59e0b", width: 1.5, dash: "dash" },
       },
     ],
-    darkLayout("Epoch (エポック)", "累積報酬"),
+    lightLayout("Epoch (エポック)", "累積報酬"),
     { responsive: true, displayModeBar: false }
   );
 
@@ -996,13 +1114,13 @@ function renderJointTrackingPlot() {
       },
     ],
     {
-      paper_bgcolor: "#090d16",
-      plot_bgcolor: "#090d16",
-      font: { color: "#f1f5f9", size: 13 },
+      paper_bgcolor: "#ffffff",
+      plot_bgcolor: "#f8fafc",
+      font: { color: "#334155", size: 13 },
       margin: { l: 52, r: 16, t: 20, b: 46 },
-      xaxis: { title: "シミュレーションステップ", gridcolor: "#1e293b", tickfont: { size: 12 } },
-      yaxis: { title: "関節角度 (rad)", gridcolor: "#1e293b", tickfont: { size: 12 } },
-      legend: { orientation: "h", y: 1.14, font: { size: 13 } },
+      xaxis: { title: "シミュレーションステップ", gridcolor: "#e2e8f0", tickfont: { size: 12, color: "#64748b" }, titlefont: { size: 13, color: "#1e293b" } },
+      yaxis: { title: "関節角度 (rad)", gridcolor: "#e2e8f0", tickfont: { size: 12, color: "#64748b" }, titlefont: { size: 13, color: "#1e293b" } },
+      legend: { orientation: "h", y: 1.14, font: { size: 12, color: "#475569" } },
     },
     { responsive: true, displayModeBar: false }
   );
@@ -1231,6 +1349,10 @@ async function bootstrap() {
     showToast("データの読み込みに失敗しました。再読み込みしてください。");
   }
 
+  // Initialize Year Filter Pills & Trend Toggle
+  initYearFilterPills();
+  initTrendPlotToggle();
+
   // --- Tab 1 Events ---
   qs("#chkSim2RealOnly").addEventListener("change", (e) => {
     state.sim2RealOnly = e.target.checked;
@@ -1256,15 +1378,18 @@ async function bootstrap() {
   qs("#btnClearPaperSearch").addEventListener("click", clearSearchHandler);
 
   const resetAllFiltersHandler = () => {
+    state.selectedYear = "all";
     state.activeClusterFilter = null;
     state.sim2RealOnly = false;
     state.searchQuery = "";
-    qs("#chkSim2RealOnly").checked = false;
-    qs("#paperSearchInput").value = "";
+    if (qs("#chkSim2RealOnly")) qs("#chkSim2RealOnly").checked = false;
+    if (qs("#paperSearchInput")) qs("#paperSearchInput").value = "";
+    qsa(".year-pill").forEach((btn) => btn.classList.toggle("active", btn.dataset.year === "all"));
     renderClusterFilterPills(state.snapshot);
     renderDensityMap(state.snapshot);
     renderPapersTable();
     updateActiveFiltersBar();
+    showToast("絞り込み条件をすべて解除しました");
   };
   qs("#btnResetMapFilter").addEventListener("click", resetAllFiltersHandler);
   qs("#btnResetAllFilters").addEventListener("click", resetAllFiltersHandler);

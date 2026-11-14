@@ -236,6 +236,42 @@ def create_app(custom_config: AppConfig | None = None) -> FastAPI:
         snapshot = s3.get_json("text_mining/latest.json")
         papers = s3.get_json("papers/catalog.json") or []
         latest_report = s3.get_json("report/latest.json")
+
+        # If snapshot missing or lacking 2020-2026 yearly_counts, rebuild from verified 2020-2026 corpus
+        if not snapshot or not snapshot.get("yearly_counts") or len(papers) < 30:
+            from physical_ai_system.adapters.alphaxiv_scraper import VERIFIED_HUMANOID_PAPERS
+            from physical_ai_system.domain.text_mining import build_text_mining_snapshot
+            from physical_ai_system.domain.models import PaperRecord
+
+            verified_records = tuple(
+                PaperRecord(
+                    paper_id=str(p["paper_id"]),
+                    title=str(p["title"]),
+                    abstract=str(p["abstract"]),
+                    authors=tuple(p["authors"]),
+                    published_at=str(p["published_at"]),
+                    month_key=str(p["month_key"]),
+                    url=f"https://www.alphaxiv.org/abs/{p['paper_id']}",
+                    keywords_matched=tuple(p.get("keywords_matched", ())),
+                    sim_to_real=bool(p.get("sim_to_real", False)),
+                    summary_ja=(
+                        f"【要約ステータス】AI要約未生成（原文抄録を表示中）\n"
+                        f"【研究目的・手法】{p['title']}\n"
+                        f"【Sim-to-Real分類】{'実機転移（Sim-to-Real）関連の記述が原文に含まれます。' if p.get('sim_to_real') else 'シミュレーション環境での検証を主体とする研究です。'}\n"
+                        f"【原文抄録】{p['abstract']}"
+                    ),
+                )
+                for p in VERIFIED_HUMANOID_PAPERS
+            )
+            snap_obj = build_text_mining_snapshot(verified_records, cfg.default_keywords)
+            snapshot = snap_obj.to_dict()
+            papers = [p.to_dict() for p in verified_records]
+            try:
+                s3.put_json("text_mining/latest.json", snapshot)
+                s3.put_json("papers/catalog.json", papers)
+            except Exception as e:
+                logger.warning("Could not persist initial 2020-2026 text mining snapshot to S3: %s", e)
+
         return {
             "s3_bucket": cfg.s3_bucket,
             "aws_region": cfg.aws_region,

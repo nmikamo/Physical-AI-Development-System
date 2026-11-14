@@ -3,6 +3,7 @@
 from physical_ai_system.domain.models import PaperRecord
 from physical_ai_system.domain.text_mining import (
     aggregate_monthly_counts,
+    aggregate_yearly_counts,
     build_text_mining_snapshot,
     detect_sim_to_real,
     is_humanoid_or_physical_ai_paper,
@@ -67,6 +68,12 @@ def test_detect_sim_to_real() -> None:
 def test_aggregate_monthly_counts() -> None:
     counts = aggregate_monthly_counts(_sample_papers())
     assert counts == (("2026-01", 2), ("2026-02", 2))
+
+
+def test_aggregate_yearly_counts() -> None:
+    counts = aggregate_yearly_counts(_sample_papers())
+    # 2026 has 4 papers total, 2 with sim_to_real=True
+    assert counts == (("2026", 4, 2),)
 
 
 def test_build_text_mining_snapshot() -> None:

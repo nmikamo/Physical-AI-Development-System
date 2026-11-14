@@ -99,6 +99,7 @@ class MonthlyTextMiningSnapshot:
     clusters: tuple[ClusterSummary, ...]
     points: tuple[TextMiningPoint, ...]
     density_grid: DensityGrid
+    yearly_counts: tuple[tuple[str, int, int], ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -109,6 +110,10 @@ class MonthlyTextMiningSnapshot:
             "keywords_used": list(self.keywords_used),
             "monthly_counts": [
                 {"month": m, "count": c} for m, c in self.monthly_counts
+            ],
+            "yearly_counts": [
+                {"year": y, "count": c, "sim_count": sc}
+                for y, c, sc in self.yearly_counts
             ],
             "top_terms": [{"term": t, "score": s} for t, s in self.top_terms],
             "clusters": [

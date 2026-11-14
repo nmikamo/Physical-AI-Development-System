@@ -197,6 +197,21 @@
               <div class="bento-cluster-pills" id="clusterFilterPills" role="group" aria-label="研究クラスタ"></div>
             </div>
 
+            <!-- Year Quick Filter Pills (2020〜) -->
+            <div class="bento-year-filter-row">
+              <span class="filter-row-label">年度絞込:</span>
+              <div class="bento-year-pills" id="yearFilterPills" role="group" aria-label="発行年度">
+                <button class="year-pill active" data-year="all" type="button">全期間 (2020〜)</button>
+                <button class="year-pill" data-year="2020" type="button">2020年</button>
+                <button class="year-pill" data-year="2021" type="button">2021年</button>
+                <button class="year-pill" data-year="2022" type="button">2022年</button>
+                <button class="year-pill" data-year="2023" type="button">2023年</button>
+                <button class="year-pill" data-year="2024" type="button">2024年</button>
+                <button class="year-pill" data-year="2025" type="button">2025年</button>
+                <button class="year-pill" data-year="2026" type="button">2026年</button>
+              </div>
+            </div>
+
             <!-- Active Filter Indicator Bar -->
             <div id="activeFiltersBar" class="active-filters-bar hidden">
               <span class="active-filters-label">条件:</span>
@@ -238,14 +253,23 @@
             </div>
           </div>
 
-          <!-- Row 4: Monthly Trend & Top Keywords -->
+          <!-- Row 4: Yearly/Monthly Trend & Top Keywords -->
           <div class="bento-grid-2col" style="margin-top: 14px;">
             <div class="bento-card">
               <div class="bento-card-header">
-                <h3>月別 論文数推移</h3>
-                <span class="tip-icon" data-tip="棒グラフ選択で該当月に絞り込み">?</span>
+                <div class="header-title-group">
+                  <h3 id="trendPlotTitle">年度別 論文推移 (2020年〜)</h3>
+                  <span class="tip-icon" data-tip="棒グラフ選択で該当年度・月に絞り込み。青=Sim-to-Real / 灰=シミュレーション">?</span>
+                </div>
+                <div class="header-action-group">
+                  <div class="trend-toggle-group">
+                    <button id="btnTrendYearly" class="view-pill active" type="button">年度別 (2020〜)</button>
+                    <button id="btnTrendMonthly" class="view-pill" type="button">月別</button>
+                  </div>
+                </div>
               </div>
-              <div id="monthlyTrendPlot" class="bento-plot-box-sm" aria-label="月別論文数推移グラフ"></div>
+              <div id="yearlyTrendPlot" class="bento-plot-box-sm" aria-label="年度別論文数推移グラフ (2020年〜)"></div>
+              <div id="monthlyTrendPlot" class="bento-plot-box-sm hidden" aria-label="月別論文数推移グラフ"></div>
             </div>
             <div class="bento-card">
               <div class="bento-card-header">

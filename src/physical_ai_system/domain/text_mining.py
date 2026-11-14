@@ -119,6 +119,24 @@ def aggregate_monthly_counts(
     return tuple(sorted(counts.items(), key=lambda item: item[0]))
 
 
+def aggregate_yearly_counts(
+    papers: Sequence[PaperRecord],
+) -> tuple[tuple[str, int, int], ...]:
+    """Purely aggregate paper counts per YYYY year: tuple of (year, total_count, sim_count)."""
+    counts: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    for p in papers:
+        year_str = (p.published_at[:4] if p.published_at else p.month_key[:4]) or "2020"
+        if not year_str.isdigit():
+            year_str = "2020"
+        counts[year_str][0] += 1
+        if p.sim_to_real:
+            counts[year_str][1] += 1
+    return tuple(
+        (y, counts[y][0], counts[y][1])
+        for y in sorted(counts.keys(), key=lambda y: int(y) if y.isdigit() else 0)
+    )
+
+
 def detect_sim_to_real(text: str) -> bool:
     """Pure predicate checking whether a paper discusses Sim-to-Real or hardware deployment."""
     lowered = text.lower()
@@ -296,11 +314,13 @@ def build_text_mining_snapshot(
     """Pure functional pipeline: PaperRecords -> TF-IDF -> 2D SVD -> KMeans -> KDE -> Snapshot."""
     ts = generated_at or datetime.now(timezone.utc).isoformat()
     monthly_counts = aggregate_monthly_counts(papers)
-    period_label = (
-        f"{monthly_counts[0][0].replace('-', '.')} - {monthly_counts[-1][0].replace('-', '.')}"
-        if monthly_counts
-        else datetime.now(timezone.utc).strftime("%Y.%m")
-    )
+    yearly_counts = aggregate_yearly_counts(papers)
+    if yearly_counts:
+        period_label = f"{yearly_counts[0][0]}年 - {yearly_counts[-1][0]}年 ({len(yearly_counts)}年間)"
+    elif monthly_counts:
+        period_label = f"{monthly_counts[0][0].replace('-', '.')} - {monthly_counts[-1][0].replace('-', '.')}"
+    else:
+        period_label = datetime.now(timezone.utc).strftime("%Y.%m")
     sim_count = sum(1 for p in papers if p.sim_to_real)
 
     if not papers:
@@ -316,6 +336,7 @@ def build_text_mining_snapshot(
             clusters=(),
             points=(),
             density_grid=empty_grid,
+            yearly_counts=(),
         )
 
     corpus = _build_corpus(papers)
@@ -415,4 +436,5 @@ def build_text_mining_snapshot(
         clusters=tuple(clusters_list),
         points=points,
         density_grid=density_grid,
+        yearly_counts=yearly_counts,
     )
