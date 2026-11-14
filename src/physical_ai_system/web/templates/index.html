@@ -3,22 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Physical AI Development System | Gentelella v4</title>
+  <title>Physical AI 開発システム | Physical AI Development System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/gentelella-v4.css?v=20261115v5" />
-  <link rel="stylesheet" href="/static/css/style.css?v=20261115v5" />
+  <link rel="stylesheet" href="/static/css/gentelella-v4.css?v=20261115v6" />
+  <link rel="stylesheet" href="/static/css/style.css?v=20261115v6" />
   <script src="https://cdn.jsdelivr.net/npm/echarts@6/dist/echarts.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" defer></script>
-  <script src="/static/js/app.js?v=20261115v5" defer></script>
+  <script src="/static/js/app.js?v=20261115v6" defer></script>
 </head>
 <body data-shell="admin" data-page="dashboard">
   <a class="skip-link" href="#main-content">メインコンテンツへスキップ</a>
   <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
 
-  <!-- Sidebar (Gentelella 2026 v4) -->
-  <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+  <!-- サイドバー (Gentelella 2026 v4) -->
+  <aside class="sidebar" id="sidebar" aria-label="メインナビゲーション">
     <div class="sidebar-brand">
       <div class="brand-icon">P</div>
       <div class="brand-name">Physical AI <small>v4</small></div>
@@ -26,43 +26,43 @@
 
     <nav class="sidebar-nav">
       <div class="nav-group">
-        <div class="nav-label">Workspace</div>
+        <div class="nav-label">ワークスペース</div>
 
-        <button type="button" class="nav-link active" data-nav="dashboard" data-rail-label="Dashboard">
+        <button type="button" class="nav-link active" data-nav="dashboard" data-rail-label="ダッシュボード">
           <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="3" width="7" height="7" rx="1.5" />
             <rect x="14" y="3" width="7" height="4" rx="1.5" />
             <rect x="3" y="14" width="7" height="7" rx="1.5" />
             <rect x="14" y="10" width="7" height="11" rx="1.5" />
           </svg>
-          <span class="nav-text">Dashboard</span>
-          <span class="badge badge-teal">Live</span>
+          <span class="nav-text">ダッシュボード</span>
+          <span class="badge badge-teal">稼働中</span>
         </button>
 
         <div class="nav-tree open">
-          <button type="button" class="nav-link nav-toggle" aria-expanded="true" data-rail-label="Research & Mining">
+          <button type="button" class="nav-link nav-toggle" aria-expanded="true" data-rail-label="論文・テキストマイニング">
             <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M4 19V5M8 19v-8M12 19V9M16 19v-5M20 19v-9" />
             </svg>
-            <span class="nav-text">Research</span>
+            <span class="nav-text">論文・調査</span>
             <svg class="nav-chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" /></svg>
           </button>
           <div class="nav-sub">
             <div class="nav-sub-inner">
               <button type="button" class="nav-sublink" data-nav="papers" data-focus="#scrapeCard">論文スクレイピング</button>
               <button type="button" class="nav-sublink" data-nav="papers" data-focus="#miningMapCard">2D密度マップ・詳細</button>
-              <button type="button" class="nav-sublink" data-nav="papers" data-focus="#trendCard">年度別/月次トレンド</button>
+              <button type="button" class="nav-sublink" data-nav="papers" data-focus="#trendCard">年度別・月次トレンド</button>
             </div>
           </div>
         </div>
 
         <div class="nav-tree open">
-          <button type="button" class="nav-link nav-toggle" aria-expanded="true" data-rail-label="RL Training">
+          <button type="button" class="nav-link nav-toggle" aria-expanded="true" data-rail-label="AI相談・学習">
             <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
             </svg>
-            <span class="nav-text">Training</span>
-            <span class="badge badge-blue">RL</span>
+            <span class="nav-text">AI相談・学習</span>
+            <span class="badge badge-blue">強化学習</span>
             <svg class="nav-chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" /></svg>
           </button>
           <div class="nav-sub">
@@ -73,24 +73,24 @@
           </div>
         </div>
 
-        <button type="button" class="nav-link" data-nav="eval" data-rail-label="Evaluation & 3D">
+        <button type="button" class="nav-link" data-nav="eval" data-rail-label="結果評価・3D">
           <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
           </svg>
-          <span class="nav-text">Evaluation &amp; 3D</span>
+          <span class="nav-text">結果評価・3D</span>
         </button>
       </div>
 
       <div class="nav-group">
-        <div class="nav-label">Infrastructure</div>
-        <button type="button" class="nav-link" data-nav="system" data-rail-label="System & AWS">
+        <div class="nav-label">インフラ・設定</div>
+        <button type="button" class="nav-link" data-nav="system" data-rail-label="システム・AWS情報">
           <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="2" y="3" width="20" height="7" rx="2" />
             <rect x="2" y="14" width="20" height="7" rx="2" />
             <line x1="6" y1="6.5" x2="6.01" y2="6.5" />
             <line x1="6" y1="17.5" x2="6.01" y2="17.5" />
           </svg>
-          <span class="nav-text">System &amp; AWS</span>
+          <span class="nav-text">システム・AWS</span>
         </button>
       </div>
     </nav>
@@ -102,34 +102,34 @@
           <span class="online"></span>
         </div>
         <div class="sidebar-user-info">
-          <div class="name">Physical AI Lab</div>
+          <div class="name">Physical AI 開発環境</div>
           <div class="role">{{ aws_region }} / EC2</div>
         </div>
       </div>
     </div>
   </aside>
 
-  <!-- Topbar -->
+  <!-- トップバー -->
   <header class="topbar">
     <div class="topbar-left">
-      <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle sidebar" aria-expanded="true">
+      <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="サイドバー切替" aria-expanded="true">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="#" data-nav="dashboard">Home</a>
+      <nav class="breadcrumb" aria-label="パンくずリスト">
+        <a href="#" data-nav="dashboard">ホーム</a>
         <span class="sep" aria-hidden="true">›</span>
-        <span class="current" id="breadcrumbCurrent">Dashboard</span>
+        <span class="current" id="breadcrumbCurrent">ダッシュボード</span>
       </nav>
     </div>
 
-    <div class="search-box" id="cmdkTrigger" role="button" tabindex="0" aria-label="Open command palette">
+    <div class="search-box" id="cmdkTrigger" role="button" tabindex="0" aria-label="コマンドパレットを開く">
       <svg class="s-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
         <circle cx="7" cy="7" r="5" />
         <path d="M11 11l3.5 3.5" />
       </svg>
-      <input type="text" id="topbarSearchInput" placeholder="Search pages or run a command..." readonly />
+      <input type="text" id="topbarSearchInput" placeholder="ページ移動やコマンドを実行..." readonly />
       <kbd>Ctrl K</kbd>
     </div>
 
@@ -139,7 +139,7 @@
         <span id="healthStatusText">接続確認中...</span>
       </span>
 
-      <button class="tb-btn theme-toggle" id="themeToggleBtn" type="button" title="Toggle theme" aria-label="Toggle theme" aria-pressed="false">
+      <button class="tb-btn theme-toggle" id="themeToggleBtn" type="button" title="テーマ切替（ライト/ダーク）" aria-label="テーマ切替" aria-pressed="false">
         <svg class="theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="12" cy="12" r="4" />
           <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
@@ -149,45 +149,45 @@
         </svg>
       </button>
 
-      <button class="tb-btn" id="btnRefreshAll" type="button" title="Refresh Dashboard Data">
+      <button class="tb-btn" id="btnRefreshAll" type="button" title="最新データを再読み込み">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <polyline points="23 4 23 10 17 10" />
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
         </svg>
       </button>
 
-      <button class="tb-avatar" type="button" data-nav="system" title="System Info">AI</button>
+      <button class="tb-avatar" type="button" data-nav="system" title="システム情報">AI</button>
     </div>
   </header>
 
-  <!-- Main Workspace -->
+  <!-- メインワークスペース -->
   <main id="main-content" tabindex="-1" class="main">
     <div class="page-wrapper">
 
       <!-- =========================================================
-           PAGE 1: DASHBOARD (OVERVIEW)
+           ページ 1: ダッシュボード（総合概要）
       ========================================================== -->
       <section id="page-dashboard" class="page-section active">
         <div class="page-header">
           <div class="page-header-row">
             <div>
-              <div class="page-pretitle">Overview — Physical AI Development System</div>
-              <h1 class="page-title">Dashboard</h1>
+              <div class="page-pretitle">総合概要 — Physical AI 開発システム</div>
+              <h1 class="page-title">ダッシュボード</h1>
             </div>
             <div class="page-actions">
               <button class="btn btn-outline" type="button" data-nav="papers">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5" /><path d="M11 11l3 3" /></svg>
-                Explore Papers
+                論文を探索
               </button>
               <button class="btn btn-primary" type="button" data-nav="train">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" /></svg>
-                New Training Run
+                新規学習を実行
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Stat Cards Row 1 -->
+        <!-- 統計カード 行1 -->
         <div class="row col-3">
           <div class="card">
             <div class="stat">
@@ -195,12 +195,12 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
               </div>
               <div class="stat-content">
-                <div class="stat-label">Collected Papers</div>
+                <div class="stat-label">収集論文数</div>
                 <div class="stat-value-row">
                   <span class="stat-value" id="dashStatPapers">-</span>
                   <span class="stat-change up" id="dashStatPeriod">2020–2026</span>
                 </div>
-                <div class="stat-subtext" id="dashStatPapersSub">alphaXiv corpus</div>
+                <div class="stat-subtext" id="dashStatPapersSub">alphaXiv コーパス</div>
               </div>
             </div>
           </div>
@@ -211,12 +211,12 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
               </div>
               <div class="stat-content">
-                <div class="stat-label">Sim2Real Papers</div>
+                <div class="stat-label">Sim2Real 関連論文</div>
                 <div class="stat-value-row">
                   <span class="stat-value" id="dashStatSim2Real">-</span>
                   <span class="stat-change up" id="dashStatSimRatio">-</span>
                 </div>
-                <div class="stat-subtext">Real-world transfer indexed</div>
+                <div class="stat-subtext">実機転移関連の登録件数</div>
               </div>
             </div>
           </div>
@@ -227,18 +227,18 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
               </div>
               <div class="stat-content">
-                <div class="stat-label">Latest Task Success</div>
+                <div class="stat-label">最新タスク成功率</div>
                 <div class="stat-value-row">
                   <span class="stat-value" id="dashStatSuccess">-</span>
                   <span class="stat-change up" id="dashStatSuccessMethod">-</span>
                 </div>
-                <div class="stat-subtext" id="dashStatSuccessSub">No training run yet</div>
+                <div class="stat-subtext" id="dashStatSuccessSub">学習実行履歴なし</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Stat Cards Row 2 -->
+        <!-- 統計カード 行2 -->
         <div class="row col-3">
           <div class="card">
             <div class="stat">
@@ -246,7 +246,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
               </div>
               <div class="stat-content">
-                <div class="stat-label">Saved Training Runs</div>
+                <div class="stat-label">保存済み学習回数</div>
                 <div class="stat-value-row">
                   <span class="stat-value" id="dashStatRuns">0</span>
                   <span class="stat-change up">S3 report/</span>
@@ -262,12 +262,12 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
               </div>
               <div class="stat-content">
-                <div class="stat-label">Available Mocaps</div>
+                <div class="stat-label">利用可能な Mocap</div>
                 <div class="stat-value-row">
                   <span class="stat-value" id="dashStatMocaps">0</span>
                   <span class="stat-change up">CSV/NPZ/BVH</span>
                 </div>
-                <div class="stat-subtext">Builtin + Uploaded</div>
+                <div class="stat-subtext">内蔵 ＋ アップロード済み</div>
               </div>
             </div>
           </div>
@@ -278,7 +278,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>
               </div>
               <div class="stat-content">
-                <div class="stat-label">AWS Storage</div>
+                <div class="stat-label">AWS ストレージ</div>
                 <div class="stat-value-row">
                   <span class="stat-value">{{ aws_region }}</span>
                 </div>
@@ -288,18 +288,18 @@
           </div>
         </div>
 
-        <!-- Main Chart + Activity Feed -->
+        <!-- メインチャート + アクティビティ -->
         <div class="row col-8-4">
           <div class="card">
             <div class="chart-header">
               <div class="chart-header-left">
-                <div class="card-title">Research &amp; Training Activity</div>
+                <div class="card-title">論文収集・Sim2Real 推移</div>
                 <div class="chart-stat" id="dashChartStat" style="margin-top:8px">-</div>
-                <div style="font-size:11.5px;color:var(--text-muted)">Yearly Paper Volume vs. Sim2Real Adoption</div>
+                <div style="font-size:11.5px;color:var(--text-muted)">収録論文数と Sim-to-Real 関連論文の推移</div>
               </div>
               <div class="chart-tabs" id="dashActivityTabs">
-                <button type="button" class="chart-tab active" data-range="yearly">Yearly</button>
-                <button type="button" class="chart-tab" data-range="monthly">Monthly</button>
+                <button type="button" class="chart-tab active" data-range="yearly">年度別</button>
+                <button type="button" class="chart-tab" data-range="monthly">月次</button>
               </div>
             </div>
             <div class="card-body">
@@ -309,8 +309,8 @@
 
           <div class="card">
             <div class="card-header">
-              <div class="card-title">Recent Pipeline Activity</div>
-              <span class="live-pulse" title="System Active"></span>
+              <div class="card-title">最近のパイプライン履歴</div>
+              <span class="live-pulse" title="稼働中"></span>
             </div>
             <div class="card-body" style="padding:8px 16px">
               <ul class="activity-list" id="dashActivityFeed"></ul>
@@ -318,27 +318,27 @@
           </div>
         </div>
 
-        <!-- Recent Runs Table + Algorithm Mix -->
+        <!-- 学習履歴テーブル + 手法分布 -->
         <div class="row col-8-4">
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">Recent Training Runs</div>
-                <div class="card-subtitle">Click a run to open Evaluation &amp; 3D</div>
+                <div class="card-title">最近の強化学習レポート</div>
+                <div class="card-subtitle">行をクリックすると結果評価・3D画面を開きます</div>
               </div>
-              <button class="btn btn-outline btn-sm" type="button" data-nav="eval">Open Evaluation ›</button>
+              <button class="btn btn-outline btn-sm" type="button" data-nav="eval">評価画面へ ›</button>
             </div>
             <div class="card-body p-0">
               <div class="table-responsive">
                 <table class="table">
                   <thead>
                     <tr>
-                      <th>Run ID</th>
-                      <th>Algorithm</th>
+                      <th>実行ID</th>
+                      <th>手法</th>
                       <th>Mocap</th>
-                      <th>Success</th>
-                      <th>Tracking</th>
-                      <th>Created</th>
+                      <th>成功率</th>
+                      <th>追従スコア</th>
+                      <th>作成日時</th>
                     </tr>
                   </thead>
                   <tbody id="dashRunsTbody"></tbody>
@@ -349,7 +349,7 @@
 
           <div class="card">
             <div class="card-header">
-              <div class="card-title">Algorithm Distribution</div>
+              <div class="card-title">学習手法の割合</div>
             </div>
             <div class="card-body">
               <div id="chartDashAlgoPie" style="width:100%;height:230px"></div>
@@ -359,39 +359,39 @@
       </section>
 
       <!-- =========================================================
-           PAGE 2: PAPERS & TEXT MINING
+           ページ 2: 論文・テキストマイニング
       ========================================================== -->
       <section id="page-papers" class="page-section">
         <div class="page-header">
           <div class="page-header-row">
             <div>
-              <div class="page-pretitle">Research Intelligence</div>
-              <h1 class="page-title">Papers &amp; Text Mining</h1>
+              <div class="page-pretitle">論文調査・テキストマイニング</div>
+              <h1 class="page-title">論文・テキストマイニング</h1>
             </div>
             <div class="page-actions">
-              <button class="btn btn-outline" type="button" id="btnResetPaperFilters">Reset Filters</button>
-              <button class="btn btn-primary" type="button" id="btnScrape">Run alphaXiv Scrape</button>
+              <button class="btn btn-outline" type="button" id="btnResetPaperFilters">フィルタをリセット</button>
+              <button class="btn btn-primary" type="button" id="btnScrape">alphaXiv 論文収集を実行</button>
             </div>
           </div>
         </div>
 
-        <!-- Scrape Control Card -->
+        <!-- スクレイピング実行カード -->
         <div class="row col-1" id="scrapeCard">
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">alphaXiv Paper Collection</div>
-                <div class="card-subtitle">Rate-limited crawler (≥ 2.0s interval) + Bedrock Japanese Summarization</div>
+                <div class="card-title">alphaXiv 論文スクレイピング</div>
+                <div class="card-subtitle">レートリミット遵守（2.0秒以上の待機間隔）＋ Amazon Bedrock 日本語要約</div>
               </div>
             </div>
             <div class="card-body">
               <div class="form-grid">
                 <div class="field-group">
-                  <label class="field-label" for="keywordsInput">Search Keywords (comma separated)</label>
+                  <label class="field-label" for="keywordsInput">検索キーワード（カンマ区切り）</label>
                   <input class="form-input" id="keywordsInput" type="text" value="{{ default_keywords }}" />
                 </div>
                 <div class="field-group">
-                  <label class="field-label" for="maxPerKw">Max Papers per Keyword</label>
+                  <label class="field-label" for="maxPerKw">キーワードごとの最大取得件数</label>
                   <input class="form-input" id="maxPerKw" type="number" value="6" min="1" max="20" />
                 </div>
               </div>
@@ -407,17 +407,17 @@
           </div>
         </div>
 
-        <!-- 2D Density Map + Paper Detail -->
+        <!-- 2D密度マップ + 論文詳細 -->
         <div class="row col-8-4" id="miningMapCard">
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">2D Text Mining Density Map (ECharts 6)</div>
-                <div class="card-subtitle">Click any paper node to inspect its Japanese summary</div>
+                <div class="card-title">2D テキストマイニング密度マップ</div>
+                <div class="card-subtitle">論文ノードをクリックすると右側に日本語要約が表示されます</div>
               </div>
               <div class="filter-bar" style="margin-bottom:0">
-                <button type="button" class="filter-chip active" data-sim-filter="all">All</button>
-                <button type="button" class="filter-chip" data-sim-filter="sim2real">Sim2Real Only</button>
+                <button type="button" class="filter-chip active" data-sim-filter="all">すべて</button>
+                <button type="button" class="filter-chip" data-sim-filter="sim2real">Sim2Real のみ</button>
               </div>
             </div>
             <div class="card-body">
@@ -429,7 +429,7 @@
 
           <div class="card">
             <div class="card-header">
-              <div class="card-title">Paper Detail</div>
+              <div class="card-title">論文詳細・日本語要約</div>
               <span class="pill-badge pill-blue" id="detailPaperId">-</span>
             </div>
             <div class="card-body">
@@ -438,7 +438,7 @@
                 <div style="display:flex;gap:6px;flex-wrap:wrap">
                   <span class="pill-badge pill-teal" id="detailPaperCluster">-</span>
                   <span class="pill-badge pill-green" id="detailPaperYear">-</span>
-                  <a id="detailPaperLink" href="#" target="_blank" rel="noopener" class="pill-badge pill-purple hidden">alphaXiv ↗</a>
+                  <a id="detailPaperLink" href="#" target="_blank" rel="noopener" class="pill-badge pill-purple hidden">alphaXiv を開く ↗</a>
                 </div>
                 <div class="paper-detail-summary" id="detailPaperSummary" style="white-space:pre-line">
                   ここに論文の日本語要約・Sim-to-Real分類・原文抄録が表示されます。
@@ -448,14 +448,14 @@
           </div>
         </div>
 
-        <!-- Yearly/Monthly Trend + Top Terms -->
+        <!-- 年度別/月次トレンド + 頻出キーワード -->
         <div class="row col-2" id="trendCard">
           <div class="card">
             <div class="card-header">
-              <div class="card-title" id="trendCardTitle">Research Trend (2020–2026)</div>
+              <div class="card-title" id="trendCardTitle">研究トレンド推移（2020–2026）</div>
               <div class="chart-tabs">
-                <button type="button" class="chart-tab active" id="btnTrendYearly">Yearly</button>
-                <button type="button" class="chart-tab" id="btnTrendMonthly">Monthly</button>
+                <button type="button" class="chart-tab active" id="btnTrendYearly">年度別</button>
+                <button type="button" class="chart-tab" id="btnTrendMonthly">月次</button>
               </div>
             </div>
             <div class="card-body">
@@ -464,7 +464,7 @@
           </div>
           <div class="card">
             <div class="card-header">
-              <div class="card-title">Top Extracted Terms</div>
+              <div class="card-title">頻出キーワード（TF-IDF 上位）</div>
             </div>
             <div class="card-body">
               <div id="chartTopTerms" class="echart-box"></div>
@@ -472,12 +472,12 @@
           </div>
         </div>
 
-        <!-- Papers Table -->
+        <!-- 論文一覧テーブル -->
         <div class="row col-1">
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">Indexed Papers <span id="papersCountHint" class="cell-mono" style="margin-left:6px;color:var(--text-muted)">(0)</span></div>
+                <div class="card-title">収録論文一覧 <span id="papersCountHint" class="cell-mono" style="margin-left:6px;color:var(--text-muted)">(0)</span></div>
               </div>
               <div style="width:260px;max-width:100%">
                 <input class="form-input" id="paperSearchInput" type="text" placeholder="タイトル・キーワード検索..." />
@@ -488,10 +488,10 @@
                 <table class="table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Title</th>
-                      <th>Cluster</th>
-                      <th>Published</th>
+                      <th>論文ID</th>
+                      <th>タイトル</th>
+                      <th>クラスタ</th>
+                      <th>公開日</th>
                       <th>Sim2Real</th>
                     </tr>
                   </thead>
@@ -504,29 +504,29 @@
       </section>
 
       <!-- =========================================================
-           PAGE 3: AI ADVISOR & TRAINING
+           ページ 3: AI相談・強化学習
       ========================================================== -->
       <section id="page-train" class="page-section">
         <div class="page-header">
           <div class="page-header-row">
             <div>
-              <div class="page-pretitle">Imitation &amp; Reinforcement Learning</div>
-              <h1 class="page-title">AI Advisor &amp; Training</h1>
+              <div class="page-pretitle">模倣学習・強化学習ワークフロー</div>
+              <h1 class="page-title">AI相談・学習実行</h1>
             </div>
             <div class="page-actions">
-              <button class="btn btn-primary" type="button" id="btnStartTrain">Start Training Job</button>
+              <button class="btn btn-primary" type="button" id="btnStartTrain">学習ジョブを開始</button>
             </div>
           </div>
         </div>
 
-        <!-- Gentelella v4 Stepper -->
+        <!-- ステップ表示 -->
         <div class="row col-1">
           <div class="card">
             <div class="card-body">
               <div class="stepper">
                 <div class="step active" id="wfStep1">
                   <div class="num"><span>1</span></div>
-                  <div class="label">AI Advisor相談</div>
+                  <div class="label">AI開発相談</div>
                 </div>
                 <div class="line" id="wfLine1"></div>
                 <div class="step active" id="wfStep2">
@@ -549,19 +549,19 @@
         </div>
 
         <div class="row col-4-8">
-          <!-- AI Advisor Chat -->
+          <!-- AI相談チャット -->
           <div class="card" id="advisorCard">
             <div class="card-header">
               <div>
-                <div class="card-title">Bedrock AI Advisor</div>
-                <div class="card-subtitle">Algorithm &amp; hyperparameter consultation</div>
+                <div class="card-title">AI 開発相談 (Bedrock)</div>
+                <div class="card-subtitle">手法選定とハイパーパラメータの提案</div>
               </div>
-              <span class="pill-badge pill-purple" id="advisorEngineBadge">Bedrock / Rule</span>
+              <span class="pill-badge pill-purple" id="advisorEngineBadge">Bedrock / ルール</span>
             </div>
             <div class="card-body">
               <div class="chat-log" id="advisorChatLog">
                 <div class="chat-msg assistant">
-                  <div class="chat-msg-meta">AI Advisor</div>
+                  <div class="chat-msg-meta">AI アドバイザー</div>
                   課題や目標（安定歩行、高速追従、不整地適応など）を入力すると、最適な手法（DAPG / RLPD / AWAC）とハイパーパラメータを提案します。
                 </div>
               </div>
@@ -569,7 +569,7 @@
                 <textarea class="form-textarea" id="advisorQuestionInput" placeholder="例: 転倒を減らしつつ歩幅を広げるにはどの手法が良いですか？"></textarea>
               </div>
               <button class="btn btn-outline" type="button" id="btnAskAdvisor" style="width:100%;justify-content:center">
-                Ask AI Advisor
+                AI に相談する
               </button>
               <div id="applySuggestionWrap" class="hidden" style="margin-top:10px">
                 <button class="btn btn-primary" type="button" id="btnApplySuggested" style="width:100%;justify-content:center">
@@ -579,12 +579,12 @@
             </div>
           </div>
 
-          <!-- Training Configuration -->
+          <!-- 学習設定 -->
           <div class="card" id="trainConfigCard">
             <div class="card-header">
               <div>
-                <div class="card-title">RL Training Configuration</div>
-                <div class="card-subtitle">Select DAPG / RLPD / AWAC and Mocap trajectory</div>
+                <div class="card-title">強化学習パラメータ設定</div>
+                <div class="card-subtitle">手法（DAPG / RLPD / AWAC）と Mocap データを選択</div>
               </div>
             </div>
             <div class="card-body">
@@ -592,58 +592,58 @@
                 <button type="button" class="algo-card selected" data-algo="DAPG">
                   <div class="algo-card-head">
                     <span class="algo-name">DAPG</span>
-                    <span class="pill-badge pill-teal">Demo Prior</span>
+                    <span class="pill-badge pill-teal">デモ正則化</span>
                   </div>
-                  <span class="algo-desc">Demo-augmented policy gradient. Fast convergence with Mocap priors.</span>
+                  <span class="algo-desc">Mocap デモ方策を活用し、安定した2足歩行へ高速収束します。</span>
                 </button>
                 <button type="button" class="algo-card" data-algo="RLPD">
                   <div class="algo-card-head">
                     <span class="algo-name">RLPD</span>
-                    <span class="pill-badge pill-blue">Off-Policy</span>
+                    <span class="pill-badge pill-blue">オフポリシー</span>
                   </div>
-                  <span class="algo-desc">High sample efficiency mixing offline demos and online rollouts.</span>
+                  <span class="algo-desc">オフラインデモとオンライン探索を混合し高いサンプル効率を実現。</span>
                 </button>
                 <button type="button" class="algo-card" data-algo="AWAC">
                   <div class="algo-card-head">
                     <span class="algo-name">AWAC</span>
-                    <span class="pill-badge pill-purple">Conservative</span>
+                    <span class="pill-badge pill-purple">保守的更新</span>
                   </div>
-                  <span class="algo-desc">Advantage-weighted actor-critic for stable offline-to-online tuning.</span>
+                  <span class="algo-desc">分布外アクションを抑えつつ安全に方策を微調整します。</span>
                 </button>
               </div>
 
               <div class="form-grid-3">
                 <div class="field-group">
-                  <label class="field-label" for="mocapSelect">Mocap Trajectory</label>
+                  <label class="field-label" for="mocapSelect">モーションキャプチャデータ</label>
                   <select class="form-select" id="mocapSelect"></select>
                 </div>
                 <div class="field-group">
-                  <label class="field-label" for="epochsInput">Epochs (5–120)</label>
+                  <label class="field-label" for="epochsInput">エポック数 (5–120)</label>
                   <input class="form-input" id="epochsInput" type="number" value="30" min="5" max="120" />
                 </div>
                 <div class="field-group">
-                  <label class="field-label" for="lrInput">Learning Rate</label>
+                  <label class="field-label" for="lrInput">学習率 (Learning Rate)</label>
                   <input class="form-input" id="lrInput" type="number" step="0.0001" value="0.0003" />
                 </div>
                 <div class="field-group">
-                  <label class="field-label" for="bcWeightInput">BC Weight</label>
+                  <label class="field-label" for="bcWeightInput">模倣損失重み (BC Weight)</label>
                   <input class="form-input" id="bcWeightInput" type="number" step="0.1" value="1.0" />
                 </div>
                 <div class="field-group">
-                  <label class="field-label" for="entropyInput">Entropy Coef</label>
+                  <label class="field-label" for="entropyInput">エントロピー係数</label>
                   <input class="form-input" id="entropyInput" type="number" step="0.005" value="0.01" />
                 </div>
                 <div class="field-group">
-                  <label class="field-label" for="smoothInput">Smoothness Weight</label>
+                  <label class="field-label" for="smoothInput">滑らかさ正則化重み</label>
                   <input class="form-input" id="smoothInput" type="number" step="0.01" value="0.06" />
                 </div>
                 <div class="field-group">
-                  <label class="field-label" for="rewardTrackInput">Tracking Weight</label>
+                  <label class="field-label" for="rewardTrackInput">軌道追従報酬重み</label>
                   <input class="form-input" id="rewardTrackInput" type="number" step="0.1" value="1.2" />
                 </div>
                 <div class="field-group" style="grid-column: span 2">
-                  <label class="field-label" for="instructionNoteInput">Instruction / Memo</label>
-                  <input class="form-input" id="instructionNoteInput" type="text" placeholder="実験メモ（任意）" />
+                  <label class="field-label" for="instructionNoteInput">実験メモ（任意）</label>
+                  <input class="form-input" id="instructionNoteInput" type="text" placeholder="例: 歩幅広め・滑らかさ重視" />
                 </div>
               </div>
 
@@ -651,17 +651,17 @@
 
               <div class="form-grid">
                 <div class="field-group">
-                  <label class="field-label">Upload Custom Mocap (CSV / NPZ / BVH)</label>
+                  <label class="field-label">カスタム Mocap アップロード (CSV / NPZ / BVH)</label>
                   <div class="upload-inline">
                     <input type="file" id="mocapUploadInput" accept=".csv,.npz,.bvh" class="form-input" style="flex:1;padding:5px" />
-                    <button type="button" class="btn btn-outline" id="btnUploadMocap">Upload</button>
+                    <button type="button" class="btn btn-outline" id="btnUploadMocap">アップロード</button>
                   </div>
                 </div>
                 <div class="field-group">
-                  <label class="field-label">Upload MuJoCo Robot XML (<span id="robotXmlNameLabel">humanoid_default.xml</span>)</label>
+                  <label class="field-label">MuJoCo ロボット XML アップロード (<span id="robotXmlNameLabel">humanoid_default.xml</span>)</label>
                   <div class="upload-inline">
                     <input type="file" id="robotXmlInput" accept=".xml" class="form-input" style="flex:1;padding:5px" />
-                    <button type="button" class="btn btn-outline" id="btnUploadRobotXml">Upload</button>
+                    <button type="button" class="btn btn-outline" id="btnUploadRobotXml">アップロード</button>
                   </div>
                 </div>
               </div>
@@ -679,41 +679,41 @@
       </section>
 
       <!-- =========================================================
-           PAGE 4: EVALUATION & 3D VIEWER
+           ページ 4: 結果評価・3Dビューワ
       ========================================================== -->
       <section id="page-eval" class="page-section">
         <div class="page-header">
           <div class="page-header-row">
             <div>
-              <div class="page-pretitle">MuJoCo Verification &amp; Loss Metrics</div>
-              <h1 class="page-title">Evaluation &amp; 3D</h1>
+              <div class="page-pretitle">MuJoCo 動作確認・学習曲線評価</div>
+              <h1 class="page-title">結果評価・3D表示</h1>
             </div>
             <div class="page-actions">
               <select class="form-select" id="evalRunSelect" style="width:240px"></select>
-              <button class="btn btn-outline" type="button" id="btnToggle3DPlay">Pause / Play 3D</button>
+              <button class="btn btn-outline" type="button" id="btnToggle3DPlay">3D 再生 / 一時停止</button>
             </div>
           </div>
         </div>
 
-        <!-- Evaluation Diagnostics Summary -->
+        <!-- 自動診断サマリー -->
         <div class="row col-1">
           <div class="card">
             <div class="card-header">
-              <div class="card-title">Automated Diagnostics</div>
+              <div class="card-title">自動評価診断</div>
               <span class="pill-badge pill-teal" id="evalRunMethodBadge">-</span>
             </div>
             <div class="card-body">
               <div class="diag-grid">
                 <div class="diag-box">
-                  <div class="diag-label">Tracking Score</div>
+                  <div class="diag-label">軌道追従スコア</div>
                   <div class="diag-val" id="diagTracking">-</div>
                 </div>
                 <div class="diag-box">
-                  <div class="diag-label">Smoothness Score</div>
+                  <div class="diag-label">動作の滑らかさ</div>
                   <div class="diag-val" id="diagSmoothness">-</div>
                 </div>
                 <div class="diag-box">
-                  <div class="diag-label">Overfitting Status</div>
+                  <div class="diag-label">過学習チェック</div>
                   <div class="diag-val" id="diagOverfit">-</div>
                 </div>
               </div>
@@ -725,33 +725,33 @@
         </div>
 
         <div class="row col-2">
-          <!-- Three.js 3D Skeleton Viewer -->
+          <!-- Three.js 3D 骨格ビューワ -->
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">Three.js 3D Humanoid Skeleton</div>
-                <div class="card-subtitle">Policy (Teal) vs. Reference Mocap (Amber)</div>
+                <div class="card-title">Three.js 3D 骨格再生</div>
+                <div class="card-subtitle">学習済み方策（緑）と参照 Mocap（黄）の比較</div>
               </div>
               <label style="font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer">
-                <input type="checkbox" id="chkShowRefSkeleton" checked /> Show Ref
+                <input type="checkbox" id="chkShowRefSkeleton" checked /> 参照骨格を表示
               </label>
             </div>
             <div class="card-body">
               <div class="stage-3d" id="threeStage">
                 <div class="stage-3d-overlay">
-                  <span class="stage-tag" id="threeRunTag">No Run</span>
-                  <span class="stage-tag" id="threeFrameTag">Frame 0 / 0</span>
+                  <span class="stage-tag" id="threeRunTag">未選択</span>
+                  <span class="stage-tag" id="threeFrameTag">フレーム 0 / 0</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- MuJoCo MP4 Evaluation Video -->
+          <!-- MuJoCo MP4 動画プレイヤー -->
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">MuJoCo MP4 Rollout Video</div>
-                <div class="card-subtitle">Physics engine contact &amp; balance check</div>
+                <div class="card-title">MuJoCo MP4 評価動画</div>
+                <div class="card-subtitle">物理エンジンによる接地・バランス確認</div>
               </div>
               <span class="pill-badge pill-teal">S3 report/</span>
             </div>
@@ -761,20 +761,20 @@
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                   <polygon points="5 3 19 12 5 21 5 3" />
                 </svg>
-                <div style="font-weight:600;color:var(--text)">No MP4 Video Selected</div>
+                <div style="font-weight:600;color:var(--text)">評価動画が選択されていません</div>
                 <div style="font-size:12px">学習完了後、ここに MuJoCo ロールアウト MP4 が再生されます。</div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Loss & Success Rate Chart (ECharts 6) -->
+        <!-- 損失 & 成功率チャート -->
         <div class="row col-1">
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">Train / Val Loss &amp; Task Success Rate (ECharts 6)</div>
-                <div class="card-subtitle">Epoch-by-epoch convergence curve</div>
+                <div class="card-title">Train / Val Loss・タスク成功率推移</div>
+                <div class="card-subtitle">エポックごとの学習収束カーブ</div>
               </div>
             </div>
             <div class="card-body">
@@ -783,13 +783,13 @@
           </div>
         </div>
 
-        <!-- AI Retrain Instruction -->
+        <!-- AI 再学習指示 -->
         <div class="row col-1">
           <div class="card">
             <div class="card-header">
               <div>
-                <div class="card-title">AI Parameter Adjustment &amp; Retrain</div>
-                <div class="card-subtitle">Natural-language feedback to Bedrock Advisor for next iteration</div>
+                <div class="card-title">AI パラメータ再調整・再学習指示</div>
+                <div class="card-subtitle">自然言語でのフィードバックに基づきパラメータを自動調整します</div>
               </div>
             </div>
             <div class="card-body">
@@ -798,8 +798,8 @@
                 <textarea class="form-textarea" id="retrainInstructionInput" placeholder="例: 動きが少しカクつくので滑らかさを重視し、エポック数を40に増やして再学習してください"></textarea>
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-outline" type="button" id="btnRetrainPreview">AI調整案を確認</button>
-                <button class="btn btn-primary" type="button" id="btnRetrainAndStart">AI調整して再学習開始</button>
+                <button class="btn btn-outline" type="button" id="btnRetrainPreview">AI 調整案を確認</button>
+                <button class="btn btn-primary" type="button" id="btnRetrainAndStart">AI 調整して再学習を開始</button>
               </div>
               <div id="retrainResultBox" class="paper-detail-summary hidden" style="margin-top:12px;white-space:pre-line"></div>
             </div>
@@ -808,14 +808,14 @@
       </section>
 
       <!-- =========================================================
-           PAGE 5: SYSTEM & AWS INFRASTRUCTURE
+           ページ 5: システム・AWS インフラ情報
       ========================================================== -->
       <section id="page-system" class="page-section">
         <div class="page-header">
           <div class="page-header-row">
             <div>
-              <div class="page-pretitle">Cloud &amp; UI Configuration</div>
-              <h1 class="page-title">System &amp; AWS</h1>
+              <div class="page-pretitle">クラウド構成・UI設定</div>
+              <h1 class="page-title">システム・AWS 情報</h1>
             </div>
           </div>
         </div>
@@ -823,24 +823,24 @@
         <div class="row col-8-4">
           <div class="card">
             <div class="card-header">
-              <div class="card-title">AWS Infrastructure (Osaka Region)</div>
+              <div class="card-title">AWS インフラ構成（大阪リージョン）</div>
             </div>
             <div class="card-body">
               <div class="kv-grid">
                 <div class="kv-item">
-                  <div class="kv-label">AWS Region</div>
+                  <div class="kv-label">AWS リージョン</div>
                   <div class="kv-value">{{ aws_region }}</div>
                 </div>
                 <div class="kv-item">
-                  <div class="kv-label">S3 Bucket</div>
+                  <div class="kv-label">S3 バケット</div>
                   <div class="kv-value">{{ s3_bucket }}</div>
                 </div>
                 <div class="kv-item">
-                  <div class="kv-label">Storage Lifecycle</div>
-                  <div class="kv-value">Intelligent-Tiering (10 Years Retention)</div>
+                  <div class="kv-label">保存ライフサイクル</div>
+                  <div class="kv-value">Intelligent-Tiering（10年間保持）</div>
                 </div>
                 <div class="kv-item">
-                  <div class="kv-label">S3 Prefixes</div>
+                  <div class="kv-label">S3 フォルダ構成</div>
                   <div class="kv-value">papers/ · text_mining/ · mocap/ · report/</div>
                 </div>
               </div>
@@ -849,27 +849,27 @@
 
           <div class="card">
             <div class="card-header">
-              <div class="card-title">Quick Settings</div>
+              <div class="card-title">表示・動作設定</div>
             </div>
             <div class="card-body" style="padding:6px 16px">
               <div class="toggle-row">
                 <div>
-                  <div class="label">Dark Mode</div>
-                  <div class="desc">Gentelella v4 dark palette</div>
+                  <div class="label">ダークモード</div>
+                  <div class="desc">Gentelella v4 ダーク配色へ切替</div>
                 </div>
                 <div class="toggle" id="settingsDarkToggle" role="switch" aria-checked="false" tabindex="0"></div>
               </div>
               <div class="toggle-row">
                 <div>
-                  <div class="label">Compact Sidebar Rail</div>
-                  <div class="desc">64px icon-only rail mode</div>
+                  <div class="label">コンパクトサイドバー</div>
+                  <div class="desc">64px アイコンレール表示</div>
                 </div>
                 <div class="toggle" id="settingsRailToggle" role="switch" aria-checked="false" tabindex="0"></div>
               </div>
               <div class="toggle-row">
                 <div>
-                  <div class="label">Rate-Limit Guard</div>
-                  <div class="desc">alphaXiv ≥ 2.0s interval</div>
+                  <div class="label">スクレイピング負荷軽減</div>
+                  <div class="desc">alphaXiv 2.0秒以上インターバル</div>
                 </div>
                 <div class="toggle on" role="switch" aria-checked="true" tabindex="0"></div>
               </div>
@@ -881,13 +881,13 @@
     </div>
 
     <footer class="footer">
-      <span>Physical AI Development System — Gentelella v4 UI</span>
+      <span>Physical AI 開発システム — Gentelella v4 UI</span>
       <span>FastAPI · ECharts 6 · Three.js</span>
     </footer>
   </main>
 
-  <!-- Command Palette (Ctrl+K / Cmd+K) -->
-  <div class="cmdk-backdrop hidden" id="cmdkBackdrop" role="dialog" aria-modal="true" aria-label="Command Palette">
+  <!-- コマンドパレット (Ctrl+K / Cmd+K) -->
+  <div class="cmdk-backdrop hidden" id="cmdkBackdrop" role="dialog" aria-modal="true" aria-label="コマンドパレット">
     <div class="cmdk-dialog">
       <div class="cmdk-input-wrap">
         <svg class="cmdk-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -906,7 +906,7 @@
     </div>
   </div>
 
-  <!-- Toast Host -->
+  <!-- トースト通知 -->
   <div class="toast-host" id="toastHost" aria-live="polite"></div>
 </body>
 </html>

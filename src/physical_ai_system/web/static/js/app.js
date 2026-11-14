@@ -5,22 +5,22 @@
    * 1. Immutable Constants & Pure Helpers
    * ========================================================= */
   const PAGE_META = Object.freeze({
-    dashboard: { title: "Dashboard", breadcrumb: "Dashboard" },
-    papers: { title: "Papers & Text Mining", breadcrumb: "Papers & Mining" },
-    train: { title: "AI Advisor & Training", breadcrumb: "Training" },
-    eval: { title: "Evaluation & 3D", breadcrumb: "Evaluation & 3D" },
-    system: { title: "System & AWS", breadcrumb: "System & AWS" },
+    dashboard: { title: "ダッシュボード", breadcrumb: "ダッシュボード" },
+    papers: { title: "論文・テキストマイニング", breadcrumb: "論文・テキストマイニング" },
+    train: { title: "AI相談・学習実行", breadcrumb: "AI相談・学習実行" },
+    eval: { title: "結果評価・3D表示", breadcrumb: "結果評価・3D表示" },
+    system: { title: "システム・AWS情報", breadcrumb: "システム・AWS情報" },
   });
 
   const COMMAND_ITEMS = Object.freeze([
-    { id: "nav-dashboard", label: "Dashboard (Overview) へ移動", group: "Navigation", action: { type: "nav", page: "dashboard" } },
-    { id: "nav-papers", label: "Papers & Text Mining へ移動", group: "Navigation", action: { type: "nav", page: "papers" } },
-    { id: "nav-train", label: "AI Advisor & Training へ移動", group: "Navigation", action: { type: "nav", page: "train" } },
-    { id: "nav-eval", label: "Evaluation & 3D へ移動", group: "Navigation", action: { type: "nav", page: "eval" } },
-    { id: "nav-system", label: "System & AWS へ移動", group: "Navigation", action: { type: "nav", page: "system" } },
-    { id: "act-refresh", label: "バックエンドデータを再読み込み", group: "Actions", action: { type: "refresh" } },
-    { id: "act-theme", label: "Light / Dark テーマを切り替え", group: "Actions", action: { type: "theme" } },
-    { id: "act-rail", label: "サイドバーのコンパクト表示を切り替え", group: "Actions", action: { type: "rail" } },
+    { id: "nav-dashboard", label: "ダッシュボード（総合概要）へ移動", group: "画面移動", action: { type: "nav", page: "dashboard" } },
+    { id: "nav-papers", label: "論文・テキストマイニングへ移動", group: "画面移動", action: { type: "nav", page: "papers" } },
+    { id: "nav-train", label: "AI相談・学習実行へ移動", group: "画面移動", action: { type: "nav", page: "train" } },
+    { id: "nav-eval", label: "結果評価・3D表示へ移動", group: "画面移動", action: { type: "nav", page: "eval" } },
+    { id: "nav-system", label: "システム・AWS情報へ移動", group: "画面移動", action: { type: "nav", page: "system" } },
+    { id: "act-refresh", label: "バックエンドデータを再読み込み", group: "操作", action: { type: "refresh" } },
+    { id: "act-theme", label: "ライト / ダークテーマを切り替え", group: "操作", action: { type: "theme" } },
+    { id: "act-rail", label: "サイドバーのコンパクト表示を切り替え", group: "操作", action: { type: "rail" } },
   ]);
 
   const SKELETON_EDGES = Object.freeze([
@@ -91,7 +91,7 @@
 
     const series = [
       {
-        name: "Total Papers",
+        name: "収録論文数",
         type: "bar",
         barMaxWidth: 26,
         data: counts,
@@ -100,7 +100,7 @@
     ];
     if (simCounts) {
       series.push({
-        name: "Sim-to-Real",
+        name: "Sim-to-Real 関連",
         type: "line",
         smooth: true,
         data: simCounts,
@@ -137,14 +137,14 @@
             { value: counts.RLPD, name: "RLPD", itemStyle: { color: t.blue } },
             { value: counts.AWAC, name: "AWAC", itemStyle: { color: t.purple } },
           ].filter((d) => d.value > 0)
-        : [{ value: 1, name: "No Runs Yet", itemStyle: { color: t.border } }];
+        : [{ value: 1, name: "学習履歴なし", itemStyle: { color: t.border } }];
 
     return {
       tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
       legend: { bottom: 0, textStyle: { color: t.textMuted, fontSize: 11 } },
       series: [
         {
-          name: "Algorithm",
+          name: "学習手法",
           type: "pie",
           radius: ["52%", "74%"],
           center: ["50%", "44%"],
@@ -238,17 +238,17 @@
 
     return {
       tooltip: { trigger: "axis" },
-      legend: { data: ["Train Loss", "Val Loss", "Task Success (%)"], bottom: 0, textStyle: { color: t.textMuted, fontSize: 11 } },
+      legend: { data: ["学習損失 (Train)", "検証損失 (Val)", "タスク成功率 (%)"], bottom: 0, textStyle: { color: t.textMuted, fontSize: 11 } },
       grid: { top: 24, left: 48, right: 48, bottom: 38 },
       xAxis: { type: "category", data: epochs, axisLabel: { color: t.textMuted, fontSize: 11 } },
       yAxis: [
-        { type: "value", name: "Loss", splitLine: { lineStyle: { color: t.border, type: "dashed" } }, axisLabel: { color: t.textMuted, fontSize: 11 } },
-        { type: "value", name: "Success %", min: 0, max: 100, splitLine: { show: false }, axisLabel: { color: t.textMuted, fontSize: 11 } },
+        { type: "value", name: "損失", splitLine: { lineStyle: { color: t.border, type: "dashed" } }, axisLabel: { color: t.textMuted, fontSize: 11 } },
+        { type: "value", name: "成功率 %", min: 0, max: 100, splitLine: { show: false }, axisLabel: { color: t.textMuted, fontSize: 11 } },
       ],
       series: [
-        { name: "Train Loss", type: "line", smooth: true, data: trainLoss, itemStyle: { color: t.blue } },
-        { name: "Val Loss", type: "line", smooth: true, data: valLoss, itemStyle: { color: t.yellow } },
-        { name: "Task Success (%)", type: "line", yAxisIndex: 1, smooth: true, data: success, itemStyle: { color: t.primary }, areaStyle: { color: t.primary, opacity: 0.1 } },
+        { name: "学習損失 (Train)", type: "line", smooth: true, data: trainLoss, itemStyle: { color: t.blue } },
+        { name: "検証損失 (Val)", type: "line", smooth: true, data: valLoss, itemStyle: { color: t.yellow } },
+        { name: "タスク成功率 (%)", type: "line", yAxisIndex: 1, smooth: true, data: success, itemStyle: { color: t.primary }, areaStyle: { color: t.primary, opacity: 0.1 } },
       ],
     };
   };
@@ -466,7 +466,7 @@
     document.getElementById("dashStatSimRatio").textContent = simRatio;
     document.getElementById("dashStatRuns").textContent = String(reports.length);
     document.getElementById("dashStatMocaps").textContent = String(state.mocaps.length);
-    document.getElementById("dashChartStat").textContent = `${totalPapers} Papers`;
+    document.getElementById("dashChartStat").textContent = `${totalPapers} 件`;
 
     if (latest && latest.metrics_history?.length) {
       const last = latest.metrics_history[latest.metrics_history.length - 1];
@@ -486,9 +486,9 @@
       const items = [];
       if (snap) {
         items.push({
-          tag: "AX",
+          tag: "論文",
           bg: "var(--blue)",
-          text: `<strong>Text Mining</strong>: ${snap.total_papers}件 (Sim2Real ${snap.sim_to_real_count}件)`,
+          text: `<strong>テキストマイニング</strong>: ${snap.total_papers}件（Sim2Real ${snap.sim_to_real_count}件）`,
           time: (snap.generated_at || "").slice(0, 16).replace("T", " "),
         });
       }
@@ -568,19 +568,19 @@
               `<option value="${escapeHtml(r.run_id)}">${escapeHtml(r.run_id)} [${escapeHtml(r.method)} / ${(r.success_rate * 100).toFixed(1)}%]</option>`
           )
           .join("")
-      : '<option value="">No runs available</option>';
+      : '<option value="">学習レポートなし</option>';
     if (state.currentReport?.run_id) sel.value = state.currentReport.run_id;
   };
 
   const renderEvaluationView = () => {
     const rep = state.currentReport;
     document.getElementById("evalRunMethodBadge").textContent = rep ? `${rep.config?.method} · ${rep.run_id}` : "-";
-    document.getElementById("threeRunTag").textContent = rep ? `${rep.config?.method} ${rep.run_id}` : "No Run";
+    document.getElementById("threeRunTag").textContent = rep ? `${rep.config?.method} ${rep.run_id}` : "未選択";
 
     const diag = rep?.diagnostics;
     document.getElementById("diagTracking").textContent = diag ? Number(diag.tracking_score).toFixed(3) : "-";
     document.getElementById("diagSmoothness").textContent = diag ? Number(diag.smoothness_score).toFixed(3) : "-";
-    document.getElementById("diagOverfit").textContent = diag ? (diag.overfitting_detected ? "Detected" : "Healthy") : "-";
+    document.getElementById("diagOverfit").textContent = diag ? (diag.overfitting_detected ? "過学習あり" : "良好") : "-";
     document.getElementById("diagSummaryJa").textContent =
       diag?.summary_ja || "学習レポートを選択または新規学習を実行すると、軌道追従性・滑らかさ・過学習の自動診断結果が表示されます。";
 
@@ -628,7 +628,7 @@
 
       if (pill && statusText) {
         pill.classList.add("is-ok");
-        statusText.textContent = "API Connected";
+        statusText.textContent = "API 接続済み";
       }
 
       renderFilterPills();
@@ -643,7 +643,7 @@
         state.currentFrames = framesRes.frames || [];
       }
     } catch (err) {
-      if (statusText) statusText.textContent = "Offline";
+      if (statusText) statusText.textContent = "未接続";
       showToast(`初期データ取得に失敗しました: ${err.message}`, "error");
     }
   };
@@ -730,9 +730,9 @@
         const f = state.currentFrames[state.frameIndex];
         updateSkeleton(policySkel, f.bodies);
         updateSkeleton(refSkel, f.bodies_ref);
-        document.getElementById("threeFrameTag").textContent = `Frame ${state.frameIndex + 1} / ${state.currentFrames.length}`;
+        document.getElementById("threeFrameTag").textContent = `フレーム ${state.frameIndex + 1} / ${state.currentFrames.length}`;
       } else {
-        document.getElementById("threeFrameTag").textContent = "No 3D Frames";
+        document.getElementById("threeFrameTag").textContent = "3Dフレームなし";
       }
       tick += 1;
       policySkel.group.rotation.y += 0.004;
