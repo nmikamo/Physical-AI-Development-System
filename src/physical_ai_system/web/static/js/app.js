@@ -118,6 +118,16 @@ function switchTab(tabId, scrollSelector = null) {
     p.classList.toggle("active", isActive);
   });
 
+  const vTitle = qs("#viewTitle");
+  if (vTitle) {
+    const titles = {
+      papers: "論文を探す",
+      train: "モデル学習",
+      eval: "結果を評価",
+    };
+    vTitle.textContent = titles[tabId] || "ダッシュボード";
+  }
+
   const stepper = qs("#workflowStepper");
   if (stepper) {
     // Show stepper only in train and eval tabs
