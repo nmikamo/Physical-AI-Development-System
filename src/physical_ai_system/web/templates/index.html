@@ -3,775 +3,893 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Physical AI Development System</title>
+  <title>Physical AI Development System | Gentelella v4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/gentelella-v4.css" />
   <link rel="stylesheet" href="/static/css/style.css" />
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@6/dist/echarts.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" defer></script>
   <script src="/static/js/app.js" defer></script>
 </head>
-<body>
-  <div class="app-layout">
-    <!-- Slim Left Navigation Rail (Figma Modern SaaS Style) -->
-    <aside class="rail-sidebar" aria-label="ナビゲーションレール">
-      <div class="rail-top">
-        <div class="rail-brand" data-tip="Physical AI Development System">
-          <span class="brand-glyph">PAI</span>
-        </div>
-        <nav class="rail-nav" role="tablist">
-          <button class="rail-btn tab-btn active" id="tabBtnPapers" role="tab" aria-selected="true" aria-controls="tab-papers" data-tab="papers" data-tip="論文を探す">
-            <span class="rail-icon">📄</span>
-            <span class="rail-label">論文</span>
-          </button>
-          <button class="rail-btn tab-btn" id="tabBtnTrain" role="tab" aria-selected="false" aria-controls="tab-train" data-tab="train" data-tip="学習する">
-            <span class="rail-icon">⚡</span>
-            <span class="rail-label">学習</span>
-          </button>
-          <button class="rail-btn tab-btn" id="tabBtnEval" role="tab" aria-selected="false" aria-controls="tab-eval" data-tab="eval" data-tip="結果を評価">
-            <span class="rail-icon">📊</span>
-            <span class="rail-label">評価</span>
-          </button>
-        </nav>
-      </div>
+<body data-shell="admin" data-page="dashboard">
+  <a class="skip-link" href="#main-content">メインコンテンツへスキップ</a>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
 
-      <div class="rail-bottom">
-        <button id="btnSystemInfoToggle" class="rail-btn-icon" data-tip="システムインフラ情報" aria-expanded="false" aria-controls="systemInfoDrawer" aria-label="システム情報">
-          ℹ
+  <!-- Sidebar (Gentelella 2026 v4) -->
+  <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+    <div class="sidebar-brand">
+      <div class="brand-icon">P</div>
+      <div class="brand-name">Physical AI <small>v4</small></div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-label">Workspace</div>
+
+        <button type="button" class="nav-link active" data-nav="dashboard" data-rail-label="Dashboard">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="4" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="10" width="7" height="11" rx="1.5" />
+          </svg>
+          <span class="nav-text">Dashboard</span>
+          <span class="badge badge-teal">Live</span>
         </button>
-        <div class="rail-status" data-tip="システム接続状態">
-          <span class="status-dot status-unknown" id="healthDot" aria-hidden="true"></span>
+
+        <div class="nav-tree open">
+          <button type="button" class="nav-link nav-toggle" aria-expanded="true" data-rail-label="Research & Mining">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M4 19V5M8 19v-8M12 19V9M16 19v-5M20 19v-9" />
+            </svg>
+            <span class="nav-text">Research</span>
+            <svg class="nav-chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" /></svg>
+          </button>
+          <div class="nav-sub">
+            <div class="nav-sub-inner">
+              <button type="button" class="nav-sublink" data-nav="papers" data-focus="#scrapeCard">論文スクレイピング</button>
+              <button type="button" class="nav-sublink" data-nav="papers" data-focus="#miningMapCard">2D密度マップ・詳細</button>
+              <button type="button" class="nav-sublink" data-nav="papers" data-focus="#trendCard">年度別トレンド</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-tree open">
+          <button type="button" class="nav-link nav-toggle" aria-expanded="true" data-rail-label="RL Training">
+            <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            <span class="nav-text">Training</span>
+            <span class="badge badge-blue">RL</span>
+            <svg class="nav-chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" /></svg>
+          </button>
+          <div class="nav-sub">
+            <div class="nav-sub-inner">
+              <button type="button" class="nav-sublink" data-nav="train" data-focus="#advisorCard">AI開発相談 (Bedrock)</button>
+              <button type="button" class="nav-sublink" data-nav="train" data-focus="#trainConfigCard">学習設定・実行</button>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="nav-link" data-nav="eval" data-rail-label="Evaluation & 3D">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+          <span class="nav-text">Evaluation &amp; 3D</span>
+        </button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-label">Infrastructure</div>
+        <button type="button" class="nav-link" data-nav="system" data-rail-label="System & AWS">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="2" y="3" width="20" height="7" rx="2" />
+            <rect x="2" y="14" width="20" height="7" rx="2" />
+            <line x1="6" y1="6.5" x2="6.01" y2="6.5" />
+            <line x1="6" y1="17.5" x2="6.01" y2="17.5" />
+          </svg>
+          <span class="nav-text">System &amp; AWS</span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user" data-nav="system" role="button" tabindex="0">
+        <div class="avatar">
+          AI
+          <span class="online"></span>
+        </div>
+        <div class="sidebar-user-info">
+          <div class="name">Physical AI Lab</div>
+          <div class="role">{{ aws_region }} / EC2</div>
         </div>
       </div>
-    </aside>
+    </div>
+  </aside>
 
-    <!-- Main Workspace Container -->
-    <div class="app-main">
-      <!-- Minimal Top Bar (Breadcrumb + Dynamic Stepper + Status) -->
-      <header class="bento-topbar">
-        <div class="bento-breadcrumb">
-          <span class="bc-app">Physical AI</span>
-          <span class="bc-sep">/</span>
-          <strong class="bc-page" id="viewTitle">論文を探す</strong>
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle sidebar" aria-expanded="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="#" data-nav="dashboard">Home</a>
+        <span class="sep" aria-hidden="true">›</span>
+        <span class="current" id="breadcrumbCurrent">Dashboard</span>
+      </nav>
+    </div>
+
+    <div class="search-box" id="cmdkTrigger" role="button" tabindex="0" aria-label="Open command palette">
+      <svg class="s-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="7" cy="7" r="5" />
+        <path d="M11 11l3.5 3.5" />
+      </svg>
+      <input type="text" id="topbarSearchInput" placeholder="Search pages or run a command..." readonly />
+      <kbd>Ctrl K</kbd>
+    </div>
+
+    <div class="topbar-right">
+      <span class="health-pill is-mock" id="healthPill">
+        <span class="dot-indicator"></span>
+        <span id="healthStatusText">Template Preview</span>
+      </span>
+
+      <button class="tb-btn theme-toggle" id="themeToggleBtn" type="button" title="Toggle theme" aria-label="Toggle theme" aria-pressed="false">
+        <svg class="theme-icon-light" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+        </svg>
+        <svg class="theme-icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      </button>
+
+      <button class="tb-btn" id="btnQuickToast" type="button" title="System Notifications">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 3a6 6 0 00-6 6c0 6-3 7-3 7h18s-3-1-3-7a6 6 0 00-6-6z" />
+          <path d="M10.5 21a1.5 1.5 0 003 0" />
+        </svg>
+        <span class="dot"></span>
+      </button>
+
+      <button class="tb-avatar" type="button" data-nav="system" title="System Info">AI</button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main id="main-content" tabindex="-1" class="main">
+    <div class="page-wrapper">
+
+      <!-- =========================================================
+           PAGE 1: DASHBOARD (OVERVIEW)
+      ========================================================== -->
+      <section id="page-dashboard" class="page-section active">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div>
+              <div class="page-pretitle">Overview — Physical AI Development System</div>
+              <h1 class="page-title">Dashboard</h1>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-outline" type="button" data-nav="papers">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5" /><path d="M11 11l3 3" /></svg>
+                Explore Papers
+              </button>
+              <button class="btn btn-primary" type="button" data-nav="train">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8h10" /></svg>
+                New Training Run
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- 4-Step Stepper (Visible in Train & Eval) -->
-        <div id="workflowStepper" class="workflow-stepper bento-stepper" aria-label="強化学習ワークフローステップ">
-          <button class="step-chip bento-step-chip" id="stepChip1" data-goto-tab="train" data-goto-target="#sectionStep1" data-tip="手法の選定相談">
-            <span class="step-badge-num">1</span>
-            <span class="step-name">AI相談</span>
-            <span class="step-state-tag" id="stepState1">未相談</span>
-          </button>
-          <span class="step-arrow bento-step-sep" aria-hidden="true">›</span>
-          <button class="step-chip bento-step-chip" id="stepChip2" data-goto-tab="train" data-goto-target="#sectionStep2" data-tip="パラメータ設定・学習実行">
-            <span class="step-badge-num">2</span>
-            <span class="step-name">学習開始</span>
-            <span class="step-state-tag" id="stepState2">待機中</span>
-          </button>
-          <span class="step-arrow bento-step-sep" aria-hidden="true">›</span>
-          <button class="step-chip bento-step-chip" id="stepChip3" data-goto-tab="eval" data-goto-target="#sectionStep3" data-tip="3D/動画/損失評価">
-            <span class="step-badge-num">3</span>
-            <span class="step-name">結果確認</span>
-            <span class="step-state-tag" id="stepState3">待機中</span>
-          </button>
-          <span class="step-arrow bento-step-sep" aria-hidden="true">›</span>
-          <button class="step-chip bento-step-chip" id="stepChip4" data-goto-tab="eval" data-goto-target="#sectionStep4" data-tip="AIによるパラメータ再調整">
-            <span class="step-badge-num">4</span>
-            <span class="step-name">再学習指示</span>
-            <span class="step-state-tag" id="stepState4">未評価</span>
-          </button>
+        <!-- Stat Cards Row 1 -->
+        <div class="row col-3">
+          <div class="card">
+            <div class="stat">
+              <div class="stat-icon teal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">Collected Papers</div>
+                <div class="stat-value-row">
+                  <span class="stat-value" id="dashStatPapers">148</span>
+                  <span class="stat-change up">+18%</span>
+                </div>
+                <div class="stat-subtext">alphaXiv 2020–2026</div>
+              </div>
+              <div class="stat-spark">
+                <div class="bar" style="height:35%"></div><div class="bar" style="height:50%"></div><div class="bar" style="height:45%"></div><div class="bar" style="height:65%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:80%"></div><div class="bar" style="height:95%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="stat">
+              <div class="stat-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">Sim2Real Ratio</div>
+                <div class="stat-value-row">
+                  <span class="stat-value" id="dashStatSim2Real">42.6%</span>
+                  <span class="stat-change up">+6.2%</span>
+                </div>
+                <div class="stat-subtext">63 Sim2Real papers indexed</div>
+              </div>
+              <div class="stat-spark">
+                <div class="bar" style="height:40%;background:var(--blue)"></div><div class="bar" style="height:52%;background:var(--blue)"></div><div class="bar" style="height:58%;background:var(--blue)"></div><div class="bar" style="height:70%;background:var(--blue)"></div><div class="bar" style="height:75%;background:var(--blue)"></div><div class="bar" style="height:88%;background:var(--blue)"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="stat">
+              <div class="stat-icon green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">Latest Task Success</div>
+                <div class="stat-value-row">
+                  <span class="stat-value">89.4%</span>
+                  <span class="stat-change up">+4.1%</span>
+                </div>
+                <div class="stat-subtext">DAPG / sample_biped_walk</div>
+              </div>
+              <div class="stat-spark">
+                <div class="bar" style="height:45%;background:var(--green)"></div><div class="bar" style="height:60%;background:var(--green)"></div><div class="bar" style="height:72%;background:var(--green)"></div><div class="bar" style="height:80%;background:var(--green)"></div><div class="bar" style="height:85%;background:var(--green)"></div><div class="bar" style="height:92%;background:var(--green)"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="bento-top-right">
-          <span class="bento-status-pill" id="healthStatus" aria-live="polite">接続確認中...</span>
+        <!-- Stat Cards Row 2 -->
+        <div class="row col-3">
+          <div class="card">
+            <div class="stat">
+              <div class="stat-icon purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">Active RL Runs</div>
+                <div class="stat-value-row">
+                  <span class="stat-value">12</span>
+                  <span class="stat-change up">3 Queued</span>
+                </div>
+                <div class="stat-subtext">DAPG / RLPD / AWAC</div>
+              </div>
+            </div>
+            <div style="padding:0 16px 12px">
+              <div class="progress-thin"><div class="bar" style="width:72%;background:var(--purple)"></div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="stat">
+              <div class="stat-icon yellow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">MuJoCo Sim Speed</div>
+                <div class="stat-value-row">
+                  <span class="stat-value">1,420<span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:3px">fps</span></span>
+                  <span class="stat-change up">Nominal</span>
+                </div>
+                <div class="stat-subtext">Humanoid 21-DoF Model</div>
+              </div>
+            </div>
+            <div style="padding:0 16px 12px">
+              <div class="progress-thin"><div class="bar" style="width:84%;background:var(--yellow)"></div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="stat">
+              <div class="stat-icon red">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>
+              </div>
+              <div class="stat-content">
+                <div class="stat-label">S3 Storage (Osaka)</div>
+                <div class="stat-value-row">
+                  <span class="stat-value">4.8<span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:3px">GB</span></span>
+                  <span class="stat-change up">10yr Policy</span>
+                </div>
+                <div class="stat-subtext">{{ s3_bucket }}</div>
+              </div>
+            </div>
+            <div style="padding:0 16px 12px">
+              <div class="progress-thin"><div class="bar" style="width:38%;background:var(--red)"></div></div>
+            </div>
+          </div>
         </div>
-      </header>
 
-      <!-- Collapsible System Information Drawer -->
-      <aside id="systemInfoDrawer" class="system-drawer hidden" aria-label="システム構成情報">
-        <div class="drawer-content">
-          <div class="drawer-header">
-            <strong>システムインフラ (AWS大阪)</strong>
-            <button id="btnCloseSystemInfo" class="btn-icon" aria-label="閉じる">✕</button>
+        <!-- Main Chart + Activity Feed -->
+        <div class="row col-8-4">
+          <div class="card">
+            <div class="chart-header">
+              <div class="chart-header-left">
+                <div class="card-title">Research &amp; Training Activity</div>
+                <div class="chart-stat" style="margin-top:8px">89.4% <span style="font-size:13px;font-weight:500;color:var(--green)">↑ 4.1%</span></div>
+                <div style="font-size:11.5px;color:var(--text-muted)">Policy Success Rate vs. Paper Indexing Volume</div>
+              </div>
+              <div class="chart-tabs" id="dashActivityTabs">
+                <button type="button" class="chart-tab active" data-range="7d">7 days</button>
+                <button type="button" class="chart-tab" data-range="30d">30 days</button>
+                <button type="button" class="chart-tab" data-range="yearly">Yearly</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="chartDashActivity" class="echart-box"></div>
+            </div>
           </div>
-          <div class="drawer-grid">
-            <div>
-              <span class="drawer-label">AWS Region:</span>
-              <span class="drawer-val">{{ aws_region }}</span>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Recent Pipeline Activity</div>
+              <span class="live-pulse" title="System Active"></span>
             </div>
-            <div>
-              <span class="drawer-label">S3 Bucket:</span>
-              <span class="drawer-val">{{ s3_bucket }}</span>
-            </div>
-            <div>
-              <span class="drawer-label">保存ポリシー:</span>
-              <span class="drawer-val">10年保持 (Intelligent-Tiering)</span>
-            </div>
-            <div>
-              <span class="drawer-label">S3 フォルダ構成:</span>
-              <span class="drawer-val"><code>papers/</code>, <code>text_mining/</code>, <code>mocap/</code>, <code>report/</code></span>
+            <div class="card-body" style="padding:8px 16px">
+              <ul class="activity-list">
+                <li class="activity-item">
+                  <div class="activity-avatar" style="background:linear-gradient(135deg,var(--primary),var(--primary-dk))">RL</div>
+                  <div>
+                    <div class="activity-body"><strong>DAPG Run #104</strong> reached 89.4% walking success</div>
+                    <div class="activity-time">4 min ago</div>
+                  </div>
+                </li>
+                <li class="activity-item">
+                  <div class="activity-avatar" style="background:linear-gradient(135deg,var(--blue),#0550a0)">AX</div>
+                  <div>
+                    <div class="activity-body"><strong>alphaXiv Scraper</strong> indexed 18 humanoid papers</div>
+                    <div class="activity-time">25 min ago</div>
+                  </div>
+                </li>
+                <li class="activity-item">
+                  <div class="activity-avatar" style="background:linear-gradient(135deg,var(--green),#1a8a32)">MJ</div>
+                  <div>
+                    <div class="activity-body"><strong>MuJoCo Eval</strong> exported MP4 &amp; 3D skeleton frames</div>
+                    <div class="activity-time">1 hour ago</div>
+                  </div>
+                </li>
+                <li class="activity-item">
+                  <div class="activity-avatar" style="background:linear-gradient(135deg,var(--purple),#8a2da0)">BD</div>
+                  <div>
+                    <div class="activity-body"><strong>Bedrock Advisor</strong> suggested RLPD entropy=0.015</div>
+                    <div class="activity-time">3 hours ago</div>
+                  </div>
+                </li>
+                <li class="activity-item">
+                  <div class="activity-avatar" style="background:linear-gradient(135deg,var(--yellow),#c97f00)">S3</div>
+                  <div>
+                    <div class="activity-body"><strong>S3 Sync</strong> archived monthly text mining matrix</div>
+                    <div class="activity-time">Yesterday</div>
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
-      </aside>
 
-      <!-- Global Toast -->
-      <div id="toastBox" class="toast hidden" role="status" aria-live="polite"></div>
-
-      <!-- Bento Workspace Body -->
-      <main class="bento-container">
-        <!-- ==================== TAB 1: 論文を探す ==================== -->
-        <section id="tab-papers" class="tab-panel active" role="tabpanel" aria-labelledby="tabBtnPapers">
-          <!-- Row 1: KPI Bento Cards -->
-          <div class="bento-kpi-row">
-            <div class="bento-kpi-card">
-              <div class="bento-kpi-header">
-                <span class="bento-kpi-label">分析対象論文数</span>
-                <span class="tip-icon" data-tip="人型・2足歩行ロボティクス関連の収集論文総数">?</span>
+        <!-- Recent Runs Table + Algorithm Mix / Tasks -->
+        <div class="row col-8-4">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Recent Training Runs</div>
+                <div class="card-subtitle">Latest bipedal imitation &amp; RL experiments</div>
               </div>
-              <strong class="bento-kpi-val" id="kpiTotalPapers">-</strong>
-              <span class="bento-kpi-sub">コーパス登録済</span>
+              <button class="btn btn-outline btn-sm" type="button" data-nav="eval">Open Evaluation ›</button>
             </div>
-            <div class="bento-kpi-card">
-              <div class="bento-kpi-header">
-                <span class="bento-kpi-label">Sim-to-Real 転移研究</span>
-                <span class="tip-icon" data-tip="実機実験・転移検証を含む実践的研究">?</span>
-              </div>
-              <strong class="bento-kpi-val kpi-accent" id="kpiSim2Real">-</strong>
-              <span class="bento-kpi-sub">実機適用ターゲット</span>
-            </div>
-            <div class="bento-kpi-card">
-              <div class="bento-kpi-header">
-                <span class="bento-kpi-label">対象期間</span>
-                <span class="tip-icon" data-tip="月次テキストマイニング集計期間">?</span>
-              </div>
-              <strong class="bento-kpi-val" id="kpiPeriod">-</strong>
-              <span class="bento-kpi-sub">月次データ集計</span>
-            </div>
-            <div class="bento-kpi-card">
-              <div class="bento-kpi-header">
-                <span class="bento-kpi-label">最終更新</span>
-                <span class="tip-icon" data-tip="毎月1日03:00定期スクレイピング実行">?</span>
-              </div>
-              <strong class="bento-kpi-val" id="kpiLastUpdated">-</strong>
-              <span class="bento-kpi-sub" id="kpiStatusDetail">S3同期済</span>
-            </div>
-          </div>
-
-          <!-- Row 2: Search & Scrape Bento Bar -->
-          <div class="bento-card bento-toolbar-card">
-            <div class="bento-scrape-bar">
-              <div class="bento-input-group flex-grow">
-                <span class="input-icon">🔍</span>
-                <input id="keywordsInput" type="text" value="{{ default_keywords }}" placeholder="キーワード (カンマ区切り)" aria-label="検索キーワード" />
-              </div>
-              <div class="bento-input-group width-sm">
-                <select id="maxPerKw" aria-label="取得上限">
-                  <option value="4">4件/語</option>
-                  <option value="6" selected>6件/語</option>
-                  <option value="10">10件/語</option>
-                </select>
-              </div>
-              <button id="btnScrape" class="btn btn-primary btn-sm" data-tip="alphaXivから最新論文を収集・マイニング実行">
-                <span class="btn-text">論文更新 ⟳</span>
-              </button>
-            </div>
-
-            <!-- Inline Scrape Status -->
-            <div id="scrapeJobBanner" class="job-banner hidden" role="alert" aria-live="polite">
-              <div class="job-text" id="scrapeJobText"></div>
-              <div class="progress-track" aria-hidden="true">
-                <div class="progress-fill" id="scrapeProgressFill" style="width: 15%"></div>
-              </div>
-            </div>
-            <div id="scrapeErrorBanner" class="error-banner hidden" role="alert"></div>
-
-            <!-- Filter Controls -->
-            <div class="bento-filter-row">
-              <div class="bento-input-group width-search">
-                <input id="paperSearchInput" type="search" placeholder="タイトル・キーワード・年月で絞り込み..." class="search-input" aria-label="論文検索" />
-                <button id="btnClearPaperSearch" class="btn-clear-icon" aria-label="検索をクリア">✕</button>
-              </div>
-              <label class="bento-pill-toggle">
-                <input type="checkbox" id="chkSim2RealOnly" />
-                <span>Sim-to-Real のみ</span>
-              </label>
-              <div class="bento-cluster-pills" id="clusterFilterPills" role="group" aria-label="研究クラスタ"></div>
-            </div>
-
-            <!-- Year Quick Filter Pills (2020〜) -->
-            <div class="bento-year-filter-row">
-              <span class="filter-row-label">年度絞込:</span>
-              <div class="bento-year-pills" id="yearFilterPills" role="group" aria-label="発行年度">
-                <button class="year-pill active" data-year="all" type="button">全期間 (2020〜)</button>
-                <button class="year-pill" data-year="2020" type="button">2020年</button>
-                <button class="year-pill" data-year="2021" type="button">2021年</button>
-                <button class="year-pill" data-year="2022" type="button">2022年</button>
-                <button class="year-pill" data-year="2023" type="button">2023年</button>
-                <button class="year-pill" data-year="2024" type="button">2024年</button>
-                <button class="year-pill" data-year="2025" type="button">2025年</button>
-                <button class="year-pill" data-year="2026" type="button">2026年</button>
-              </div>
-            </div>
-
-            <!-- Active Filter Indicator Bar -->
-            <div id="activeFiltersBar" class="active-filters-bar hidden">
-              <span class="active-filters-label">条件:</span>
-              <div id="activeFilterTags" class="active-filter-tags"></div>
-              <button id="btnResetAllFilters" class="btn-link-xs">条件全解除</button>
-            </div>
-          </div>
-
-          <!-- Row 3: Bento Grid: Trend Map & Detail Panel -->
-          <div class="bento-grid-2col">
-            <!-- 2D Spatial Density Map -->
-            <div class="bento-card bento-col-map">
-              <div class="bento-card-header">
-                <div class="header-title-group">
-                  <h3>研究トレンドマップ</h3>
-                  <span class="tip-icon" data-tip="プロット点選択で詳細表示。白=シミュレーション / 黄=Sim-to-Real">?</span>
-                </div>
-                <div class="header-action-group">
-                  <span class="legend-pill"><span class="dot-sim">●</span> Sim</span>
-                  <span class="legend-pill"><span class="dot-real">●</span> Real</span>
-                  <button id="btnResetMapFilter" class="btn btn-secondary btn-xs">マップ初期化</button>
-                </div>
-              </div>
-              <div id="densityMapPlot" class="bento-plot-box-map" aria-label="研究トレンド2D散布図マップ"></div>
-            </div>
-
-            <!-- Paper Detail Panel -->
-            <div class="bento-card bento-col-detail" id="paperDetailContainer">
-              <div class="bento-card-header">
-                <div class="header-title-group">
-                  <h3>論文詳細</h3>
-                  <span class="badge" id="selectedPaperIdBadge">未選択</span>
-                </div>
-                <span class="hint-xs" id="detailHelperText">マップまたは一覧から選択</span>
-              </div>
-              <div id="paperDetailBox" class="paper-detail-empty">
-                マップ上のプロット点、または下の論文一覧から選択してください。
-              </div>
-            </div>
-          </div>
-
-          <!-- Row 4: Yearly/Monthly Trend & Top Keywords -->
-          <div class="bento-grid-2col" style="margin-top: 14px;">
-            <div class="bento-card">
-              <div class="bento-card-header">
-                <div class="header-title-group">
-                  <h3 id="trendPlotTitle">年度別 論文推移 (2020年〜)</h3>
-                  <span class="tip-icon" data-tip="棒グラフ選択で該当年度・月に絞り込み。青=Sim-to-Real / 灰=シミュレーション">?</span>
-                </div>
-                <div class="header-action-group">
-                  <div class="trend-toggle-group">
-                    <button id="btnTrendYearly" class="view-pill active" type="button">年度別 (2020〜)</button>
-                    <button id="btnTrendMonthly" class="view-pill" type="button">月別</button>
-                  </div>
-                </div>
-              </div>
-              <div id="yearlyTrendPlot" class="bento-plot-box-sm" aria-label="年度別論文数推移グラフ (2020年〜)"></div>
-              <div id="monthlyTrendPlot" class="bento-plot-box-sm hidden" aria-label="月別論文数推移グラフ"></div>
-            </div>
-            <div class="bento-card">
-              <div class="bento-card-header">
-                <h3>頻出キーワード上位</h3>
-                <span class="tip-icon" data-tip="棒グラフ選択でキーワード絞り込み">?</span>
-              </div>
-              <div id="topTermsPlot" class="bento-plot-box-sm" aria-label="頻出キーワード上位グラフ"></div>
-            </div>
-          </div>
-
-          <!-- Row 5: Paper Catalog Table -->
-          <div class="bento-card" id="papersTableSection" style="margin-top: 14px;">
-            <div class="bento-card-header">
-              <div class="header-title-group">
-                <h3>論文一覧</h3>
-                <span class="bento-count-badge" id="tableCountHint">0 件</span>
-              </div>
-            </div>
-            <div class="table-wrap" tabindex="0" role="region" aria-label="論文データ一覧">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th style="width: 100px;">公開月</th>
-                    <th style="width: 34%;">タイトル</th>
-                    <th style="width: 18%;">研究クラスタ</th>
-                    <th style="width: 110px;">分類</th>
-                    <th>要旨（抜粋）</th>
-                  </tr>
-                </thead>
-                <tbody id="papersTableBody"></tbody>
-              </table>
-              <div id="tableEmptyState" class="table-empty hidden">
-                <p id="tableEmptyMessage">条件に一致する論文がありません。</p>
-                <button id="btnEmptyReset" class="btn btn-secondary btn-sm">絞り込みをリセット</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ==================== TAB 2: 学習する ==================== -->
-        <section id="tab-train" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnTrain">
-          <div class="bento-grid-2col">
-            <!-- STEP 1: AI Advisor Bento Card -->
-            <div class="bento-card" id="sectionStep1">
-              <div class="bento-card-header">
-                <div class="header-title-group">
-                  <span class="bento-step-pill">STEP 1</span>
-                  <h3>AI相談</h3>
-                  <span class="tip-icon" data-tip="歩行目標に合わせてDAPG/RLPD/AWACから最適手法をAIが助言">?</span>
-                </div>
-                <span class="badge" id="advisorEngineBadge">AI Advisor</span>
-              </div>
-
-              <!-- Compact Question Chips -->
-              <div class="bento-chips-bar">
-                <button class="chip-btn bento-chip" data-ask="モーションキャプチャーの歩行軌道を忠実に再現しつつ安定して歩かせるには、DAPG・RLPD・AWACのどれが良いですか？">
-                  🎯 DAPG追随
-                </button>
-                <button class="chip-btn bento-chip" data-ask="少ない試行回数（高サンプル効率）で素早くタスク成功率と報酬を最大化するにはどの学習方法が良いですか？">
-                  ⚡ RLPD効率
-                </button>
-                <button class="chip-btn bento-chip" data-ask="過学習や関節の激しい振動（ジャーク）を抑え、滑らかで安全な2足歩行を学習するにはどの手法が良いですか？">
-                  🌊 AWAC平滑
-                </button>
-                <button class="chip-btn bento-chip" data-ask="DAPG、RLPD、AWACの3手法それぞれの特徴・長所・短所を比較して教えてください。">
-                  📊 3手法比較
-                </button>
-              </div>
-
-              <div id="advisorChatLog" class="chat-log bento-chat-log" role="log" aria-live="polite">
-                <div class="chat-msg ai">
-                  <strong>Antigravity Physical AI アドバイザー</strong><br/>
-                  上のチップを押すか、下の入力欄から質問してください。
-                </div>
-              </div>
-
-              <div class="bento-chat-input-row">
-                <input id="advisorQuestion" type="text" placeholder="AIへ質問 (例: 大歩幅歩行で転倒を防ぐには？)" aria-label="AIへの相談内容" />
-                <button id="btnAskAdvisor" class="btn btn-primary btn-sm">
-                  <span class="btn-text">相談 ↵</span>
-                </button>
-              </div>
-              <div id="advisorErrorBanner" class="error-banner hidden" role="alert"></div>
-
-              <!-- Suggested Config Banner -->
-              <div id="applySuggestionWrap" class="suggestion-banner hidden">
-                <div class="suggestion-text">
-                  <strong>AI推奨: <span id="suggestedMethodText">-</span></strong>
-                </div>
-                <button id="btnApplySuggested" class="btn btn-accent btn-xs">推奨設定を反映 →</button>
-              </div>
-            </div>
-
-            <!-- STEP 2: Training Setup & Execution Bento Card -->
-            <div class="bento-card" id="sectionStep2">
-              <div class="bento-card-header">
-                <div class="header-title-group">
-                  <span class="bento-step-pill">STEP 2</span>
-                  <h3>学習設定</h3>
-                </div>
-              </div>
-
-              <!-- Algorithm Radio Cards (Bento Style) -->
-              <fieldset class="algo-fieldset bento-algo-fieldset">
-                <div class="algo-cards-grid" role="radiogroup" aria-label="学習アルゴリズム">
-                  <label class="algo-card-label" for="algoRadioDAPG">
-                    <input type="radio" id="algoRadioDAPG" name="rlMethodRadio" value="DAPG" checked />
-                    <div class="algo-card-box">
-                      <div class="algo-card-top">
-                        <strong>DAPG</strong>
-                        <span class="algo-rec-badge hidden" id="recBadge-DAPG">AI推奨</span>
-                      </div>
-                      <span class="algo-tag">模倣＋方策勾配</span>
-                      <span class="tip-icon" data-tip="模倣学習(BC)で初期化し方策勾配法で改善。お手本軌道の忠実な追随に最適">?</span>
-                    </div>
-                  </label>
-
-                  <label class="algo-card-label" for="algoRadioRLPD">
-                    <input type="radio" id="algoRadioRLPD" name="rlMethodRadio" value="RLPD" />
-                    <div class="algo-card-box">
-                      <div class="algo-card-top">
-                        <strong>RLPD</strong>
-                        <span class="algo-rec-badge hidden" id="recBadge-RLPD">AI推奨</span>
-                      </div>
-                      <span class="algo-tag">高サンプル効率</span>
-                      <span class="tip-icon" data-tip="事前MoCap 50%＋オンライン50%対称サンプリング。少ない試行で成功率を素早く最大化">?</span>
-                    </div>
-                  </label>
-
-                  <label class="algo-card-label" for="algoRadioAWAC">
-                    <input type="radio" id="algoRadioAWAC" name="rlMethodRadio" value="AWAC" />
-                    <div class="algo-card-box">
-                      <div class="algo-card-top">
-                        <strong>AWAC</strong>
-                        <span class="algo-rec-badge hidden" id="recBadge-AWAC">AI推奨</span>
-                      </div>
-                      <span class="algo-tag">低振動・安定化</span>
-                      <span class="tip-icon" data-tip="デモ分布から大きく逸脱しない安全な学習。過学習や激しい関節振動を抑えたい場合に最適">?</span>
-                    </div>
-                  </label>
-                </div>
-                <input type="hidden" id="methodSelect" value="DAPG" />
-              </fieldset>
-
-              <!-- Motion & Epochs Grid -->
-              <div class="bento-form-row">
-                <div class="form-group flex-1">
-                  <label for="mocapSelect">モーション</label>
-                  <select id="mocapSelect"></select>
-                </div>
-                <div class="form-group width-epoch">
-                  <label for="epochsInput">エポック数 <span class="diff-tag" id="diff-epochs"></span></label>
-                  <input id="epochsInput" type="number" min="5" max="120" value="25" />
-                </div>
-              </div>
-
-              <!-- Collapsible Advanced Settings -->
-              <details class="advanced-settings-box bento-details">
-                <summary class="advanced-summary">
-                  <span>詳細パラメータ <span class="tip-icon" data-tip="通常は初期値のままで問題ありません">?</span></span>
-                  <span class="summary-arrow" aria-hidden="true">▼</span>
-                </summary>
-                <div class="advanced-content">
-                  <div class="form-grid-3">
-                    <div class="form-group">
-                      <label for="lrInput">学習率 <span class="tip-icon" data-tip="モデル更新幅 (標準 0.0003)">?</span> <span class="diff-tag" id="diff-learning_rate"></span></label>
-                      <input id="lrInput" type="number" step="0.0001" value="0.0003" />
-                    </div>
-                    <div class="form-group">
-                      <label for="bcWeightInput">模倣重み <span class="tip-icon" data-tip="お手本を模倣する強さ">?</span> <span class="diff-tag" id="diff-bc_weight"></span></label>
-                      <input id="bcWeightInput" type="number" step="0.1" value="1.0" />
-                    </div>
-                    <div class="form-group">
-                      <label for="smoothWeightInput">平滑化重み <span class="tip-icon" data-tip="関節振動(ジャーク)を抑える強さ">?</span> <span class="diff-tag" id="diff-smoothness_weight"></span></label>
-                      <input id="smoothWeightInput" type="number" step="0.01" value="0.06" />
-                    </div>
-                    <div class="form-group">
-                      <label for="trackWeightInput">追随報酬 <span class="tip-icon" data-tip="姿勢一致時の報酬ボーナス">?</span> <span class="diff-tag" id="diff-reward_tracking_weight"></span></label>
-                      <input id="trackWeightInput" type="number" step="0.1" value="1.2" />
-                    </div>
-                    <div class="form-group">
-                      <label for="entropyInput">エントロピー <span class="tip-icon" data-tip="探索度合い・過学習抑制">?</span> <span class="diff-tag" id="diff-entropy_coef"></span></label>
-                      <input id="entropyInput" type="number" step="0.005" value="0.01" />
-                    </div>
-                  </div>
-
-                  <!-- Uploads -->
-                  <div class="upload-section bento-upload-section">
-                    <div class="inline-upload">
-                      <label for="mocapFile" class="upload-label">新規モーション:</label>
-                      <input id="mocapFile" type="file" accept=".csv,.npz,.bvh" />
-                      <button id="btnUploadMocap" class="btn btn-secondary btn-xs">S3登録</button>
-                    </div>
-                    <div class="inline-upload">
-                      <label for="robotXmlFile" class="upload-label">ロボットXML:</label>
-                      <input id="robotXmlFile" type="file" accept=".xml" />
-                      <button id="btnUploadXml" class="btn btn-secondary btn-xs">登録</button>
-                      <span class="field-helper" id="currentXmlLabel">humanoid_default.xml</span>
-                      <input type="hidden" id="robotXmlName" value="humanoid_default.xml" />
-                    </div>
-                  </div>
-                </div>
-              </details>
-
-              <!-- Pre-flight Confirmation Strip -->
-              <div class="preview-card bento-preview-strip">
-                <span class="preview-title">設定:</span>
-                <span class="bento-badge" id="previewMethod">DAPG</span>
-                <span class="bento-badge" id="previewMocap">-</span>
-                <span class="bento-badge"><strong id="previewEpochs">25</strong> ep</span>
-                <span class="bento-badge">smooth: <strong id="previewSmooth">0.06</strong></span>
-              </div>
-
-              <!-- Start Button -->
-              <div class="bento-action-row">
-                <button id="btnStartTrain" class="btn btn-primary btn-lg flex-grow">
-                  <span class="btn-text">▶ 学習を開始</span>
-                </button>
-              </div>
-
-              <div id="trainJobBanner" class="job-banner hidden" role="alert" aria-live="polite">
-                <div class="job-text" id="trainJobText"></div>
-                <div class="progress-track" aria-hidden="true">
-                  <div class="progress-fill" id="trainProgressFill" style="width: 5%"></div>
-                </div>
-              </div>
-              <div id="trainErrorBanner" class="error-banner hidden" role="alert"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- ==================== TAB 3: 結果を評価 ==================== -->
-        <section id="tab-eval" class="tab-panel" role="tabpanel" aria-labelledby="tabBtnEval">
-          <!-- Active Run Header Card -->
-          <div class="bento-card bento-run-header" id="sectionStep3">
-            <div class="bento-run-selector">
-              <label for="reportSelect" class="sr-only">表示する学習結果</label>
-              <select id="reportSelect" class="bento-select-lg"></select>
-              <button id="btnLoadReport" class="btn btn-secondary btn-sm">
-                <span class="btn-text">結果を読込</span>
-              </button>
-            </div>
-            <div class="bento-meta-pills">
-              <span class="meta-pill"><strong id="evalRunId">-</strong></span>
-              <span class="meta-pill">手法: <strong id="evalMethod">-</strong></span>
-              <span class="meta-pill">動作: <strong id="evalMocap">-</strong></span>
-              <span class="meta-pill">日時: <strong id="evalCreatedAt">-</strong></span>
-              <button id="btnToggleScoreHelp" class="btn-icon-link" aria-expanded="false" aria-controls="scoreHelpBox" data-tip="スコア評価基準ガイド">
-                ℹ
-              </button>
-            </div>
-          </div>
-
-          <!-- 4 Bento KPI Metric Cards -->
-          <div class="bento-kpi-row" style="margin-top: 14px;">
-            <div class="bento-kpi-card">
-              <div class="bento-kpi-header">
-                <span class="bento-kpi-label">タスク成功率</span>
-                <span class="tip-icon" data-tip="転倒せず目標軌道を歩行継続できた割合（80%以上で安定歩行）">?</span>
-              </div>
-              <strong class="bento-kpi-val kpi-ok" id="evalKpiSuccess">-</strong>
-              <span class="bento-kpi-sub">歩行継続率</span>
-            </div>
-            <div class="bento-kpi-card">
-              <div class="bento-kpi-header">
-                <span class="bento-kpi-label">動作追随性スコア</span>
-                <span class="tip-icon" data-tip="お手本モーション角度との一致度（70点以上で良好）">?</span>
-              </div>
-              <strong class="bento-kpi-val" id="evalKpiTracking">-</strong>
-              <span class="bento-kpi-sub">規範軌道一致度 / 100</span>
-            </div>
-            <div class="bento-kpi-card">
-              <div class="bento-kpi-header">
-                <span class="bento-kpi-label">滑らかさスコア</span>
-                <span class="tip-icon" data-tip="関節の角加速度急変(ジャーク)の少なさ（70点以上で滑らか）">?</span>
-              </div>
-              <strong class="bento-kpi-val" id="evalKpiSmooth">-</strong>
-              <span class="bento-kpi-sub">低ジャーク評価 / 100</span>
-            </div>
-            <div class="bento-kpi-card">
-              <div class="bento-kpi-header">
-                <span class="bento-kpi-label">過学習判定</span>
-                <span class="tip-icon" data-tip="Train LossとVal Lossの乖離度から過学習リスクを診断">?</span>
-              </div>
-              <strong class="bento-kpi-val-text" id="evalKpiOverfit">-</strong>
-              <span class="bento-kpi-sub" id="evalKpiOverfitGap">Loss乖離度</span>
-            </div>
-          </div>
-
-          <!-- Hidden Score Criteria (kept for compatibility) -->
-          <div id="scoreHelpBox" class="score-help-box hidden">
-            <div class="score-help-grid">
-              <div><strong>🎯 追随性:</strong> 70点以上で良好。お手本角度とロボット関節角度の一致度。</div>
-              <div><strong>🌊 滑らかさ:</strong> 70点以上で滑らか。ジャーク（角加速度変化）を抑制。</div>
-              <div><strong>🛡️ 過学習判定:</strong> Train Loss vs Val Loss の乖離を警告。</div>
-            </div>
-          </div>
-
-          <!-- Diagnostics Details -->
-          <div id="diagnosticsDetails" class="diagnostics-details bento-diag-strip">
-            学習レポートを読み込み中です...
-          </div>
-
-          <!-- Visualizers: MuJoCo Video + Three.js 3D Viewer -->
-          <div class="bento-grid-2col" style="margin-top: 14px;">
-            <div class="bento-card">
-              <div class="bento-card-header">
-                <h3>物理シミュレーション (MP4)</h3>
-                <div class="viewer-actions">
-                  <div class="speed-buttons" role="group" aria-label="再生速度">
-                    <button class="btn btn-secondary btn-xs speed-vid-btn" data-vrate="0.5">0.5x</button>
-                    <button class="btn btn-secondary btn-xs speed-vid-btn active" data-vrate="1.0">1.0x</button>
-                    <button class="btn btn-secondary btn-xs speed-vid-btn" data-vrate="1.5">1.5x</button>
-                  </div>
-                  <a id="btnDownloadVideo" href="#" download class="btn-icon-xs" data-tip="動画を保存">⬇</a>
-                </div>
-              </div>
-              <video id="mujocoVideo" class="video-player bento-player" controls autoplay loop muted playsinline aria-label="物理シミュレーション動画"></video>
-            </div>
-
-            <div class="bento-card">
-              <div class="bento-card-header">
-                <div class="header-title-group">
-                  <h3>Three.js 3D骨格</h3>
-                  <span class="tip-icon" data-tip="ドラッグで360°回転・ホイールでズーム">?</span>
-                </div>
-                <div class="header-action-group">
-                  <label class="bento-pill-toggle">
-                    <input type="checkbox" id="chkShowRefSkeleton" checked />
-                    <span>お手本骨格 (緑)</span>
-                  </label>
-                </div>
-              </div>
-
-              <div id="threeContainer" class="three-box bento-three-box" tabindex="0" role="region" aria-label="3D骨格ビューア"></div>
-
-              <div class="three-toolbar bento-three-toolbar">
-                <button id="btnToggle3D" class="btn btn-primary btn-xs">一時停止</button>
-                <button id="btnStepPrev" class="btn btn-secondary btn-xs" aria-label="1コマ戻る">◀</button>
-                <input id="frameSlider" type="range" min="0" max="119" value="0" class="frame-slider" aria-label="コマ送りスライダー" />
-                <button id="btnStepNext" class="btn btn-secondary btn-xs" aria-label="1コマ進む">▶</button>
-                <span id="frameCounter" class="frame-label">Frame 1/120</span>
-                <select id="speed3DSelect" class="speed-select" aria-label="3D再生速度">
-                  <option value="0.25">0.25x</option>
-                  <option value="0.5">0.5x</option>
-                  <option value="1" selected>1.0x</option>
-                  <option value="2">2.0x</option>
-                </select>
-                <div class="cam-presets" role="group" aria-label="カメラ視点">
-                  <button class="btn btn-secondary btn-xs cam-btn" data-cam="iso">斜め</button>
-                  <button class="btn btn-secondary btn-xs cam-btn" data-cam="side">側面</button>
-                  <button class="btn btn-secondary btn-xs cam-btn" data-cam="front">正面</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Analytical Plots (2x2 Grid) -->
-          <div class="bento-grid-2col" style="margin-top: 14px;">
-            <div class="bento-card">
-              <div class="bento-card-header">
-                <h3>LOSS推移 (Train vs Validation)</h3>
-                <span class="tip-icon" data-tip="乖離から過学習の有無を確認">?</span>
-              </div>
-              <div id="lossPlot" class="bento-plot-box" aria-label="LOSS推移グラフ"></div>
-            </div>
-            <div class="bento-card">
-              <div class="bento-card-header">
-                <h3>タスク成功率 ＆ 生存ステップ</h3>
-                <span class="tip-icon" data-tip="転倒せず目標軌道を歩行できた割合">?</span>
-              </div>
-              <div id="successPlot" class="bento-plot-box" aria-label="成功率グラフ"></div>
-            </div>
-          </div>
-
-          <div class="bento-grid-2col" style="margin-top: 14px;">
-            <div class="bento-card">
-              <div class="bento-card-header">
-                <h3>エピソード累積報酬</h3>
-                <span class="tip-icon" data-tip="累積報酬および移動平均線の向上推移">?</span>
-              </div>
-              <div id="returnPlot" class="bento-plot-box" aria-label="累積リターン曲線"></div>
-            </div>
-            <div class="bento-card">
-              <div class="bento-card-header">
-                <div class="header-title-group">
-                  <h3>関節軌道追随性</h3>
-                  <span class="tip-icon" data-tip="破線(緑): お手本MoCap / 実線(橙): ロボット実測">?</span>
-                </div>
-                <select id="jointPlotSelect" class="speed-select" style="min-width: 150px;" aria-label="表示対象の関節"></select>
-              </div>
-              <div id="jointTrackingPlot" class="bento-plot-box" aria-label="関節軌道追随グラフ"></div>
-            </div>
-          </div>
-
-          <!-- STEP 4: AI Retrain Bento Card -->
-          <div class="bento-card" id="sectionStep4" style="margin-top: 14px;">
-            <div class="bento-card-header">
-              <div class="header-title-group">
-                <span class="bento-step-pill">STEP 4</span>
-                <h3>AI再学習指示</h3>
-                <span class="tip-icon" data-tip="改善要求をAIに伝えるとパラメータ変更案を自動作成します">?</span>
-              </div>
-            </div>
-
-            <!-- Compact Retrain Chips -->
-            <div class="bento-chips-bar">
-              <button class="eval-chip-btn bento-chip" data-instr="人の動き（お手本モーション）への追随性をさらに高めたいので、模倣重みと追随報酬を強化して再学習してください。">
-                🎯 追随性強化
-              </button>
-              <button class="eval-chip-btn bento-chip" data-instr="関節動作に少し振動（ジャーク）があるため、滑らかさ重み（smoothness_weight）を引き上げて滑らかな歩行に再学習してください。">
-                🌊 振動抑制
-              </button>
-              <button class="eval-chip-btn bento-chip" data-instr="Validation Lossの乖離（過学習）を抑えて汎化性能を高めるよう、正則化とエントロピーを調整して再学習してください。">
-                🛡️ 過学習抑制
-              </button>
-              <button class="eval-chip-btn bento-chip" data-instr="学習アルゴリズムを RLPD に切り替えて、サンプル効率とタスク成功率を最大化する設定で再学習してください。">
-                ⚡ RLPD切替
-              </button>
-              <button class="eval-chip-btn bento-chip" data-instr="学習アルゴリズムを AWAC に切り替えて、デモ分布から逸脱しない安全で滑らかな設定で再学習してください。">
-                🔒 AWAC切替
-              </button>
-            </div>
-
-            <div class="form-group" style="margin-top: 10px;">
-              <textarea id="retrainInstruction" rows="2" placeholder="改善要望 (例: 足首のブレを抑えたい、歩幅を広げたい)" class="bento-textarea" aria-label="再学習の指示"></textarea>
-            </div>
-
-            <div class="bento-action-row">
-              <button id="btnCreateRetrainPlan" class="btn btn-primary btn-sm">
-                <span class="btn-text">AI変更案を作成 ↵</span>
-              </button>
-            </div>
-            <div id="retrainErrorBanner" class="error-banner hidden" role="alert"></div>
-
-            <!-- Parameter Diff Confirmation Card -->
-            <div id="retrainConfirmBox" class="retrain-confirm-card bento-confirm-card hidden">
-              <div class="confirm-header">
-                <strong>AI提案パラメータ差分</strong>
-                <span class="badge" id="retrainEngineBadge">AI Advisor</span>
-              </div>
-              <div id="retrainExplanation" class="retrain-explanation"></div>
-
-              <div class="table-wrap" style="margin-top: 10px;">
-                <table class="data-table" style="font-size: 0.875rem;">
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table">
                   <thead>
                     <tr>
-                      <th>パラメータ</th>
-                      <th>変更前</th>
-                      <th>変更後</th>
-                      <th>意図</th>
+                      <th>Run ID</th>
+                      <th>Algorithm</th>
+                      <th>Mocap Source</th>
+                      <th>Success</th>
+                      <th>Status</th>
+                      <th>Updated</th>
                     </tr>
                   </thead>
-                  <tbody id="retrainDiffTableBody"></tbody>
+                  <tbody>
+                    <tr>
+                      <td class="cell-mono">#RUN-104</td>
+                      <td><span class="pill-badge pill-teal">DAPG</span></td>
+                      <td class="cell-strong">sample_biped_walk</td>
+                      <td class="cell-mono">89.4%</td>
+                      <td><span class="status status-green">Completed</span></td>
+                      <td>Today 23:40</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-mono">#RUN-103</td>
+                      <td><span class="pill-badge pill-blue">RLPD</span></td>
+                      <td class="cell-strong">biped_sprint_v2</td>
+                      <td class="cell-mono">82.1%</td>
+                      <td><span class="status status-green">Completed</span></td>
+                      <td>Today 21:15</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-mono">#RUN-102</td>
+                      <td><span class="pill-badge pill-purple">AWAC</span></td>
+                      <td class="cell-strong">terrain_step_up</td>
+                      <td class="cell-mono">76.8%</td>
+                      <td><span class="status status-yellow">Tuning</span></td>
+                      <td>Yesterday</td>
+                    </tr>
+                    <tr>
+                      <td class="cell-mono">#RUN-101</td>
+                      <td><span class="pill-badge pill-teal">DAPG</span></td>
+                      <td class="cell-strong">recovery_push</td>
+                      <td class="cell-mono">64.0%</td>
+                      <td><span class="status status-blue">Archived</span></td>
+                      <td>2 days ago</td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
+            </div>
+          </div>
 
-              <div class="actions-row" style="margin-top: 12px;">
-                <button id="btnExecuteRetrainConfirmed" class="btn btn-accent btn-sm">
-                  <span class="btn-text">▶ この設定で再学習を開始</span>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Algorithm Distribution</div>
+            </div>
+            <div class="card-body">
+              <div id="chartDashAlgoPie" style="width:100%;height:230px"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           PAGE 2: PAPERS & TEXT MINING
+      ========================================================== -->
+      <section id="page-papers" class="page-section">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div>
+              <div class="page-pretitle">Research Intelligence</div>
+              <h1 class="page-title">Papers &amp; Text Mining</h1>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-outline" type="button" id="btnResetPaperFilters">Reset Filters</button>
+              <button class="btn btn-primary" type="button" id="btnMockScrape">Run alphaXiv Scrape</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scrape Control Card -->
+        <div class="row col-1" id="scrapeCard">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">alphaXiv Paper Collection</div>
+                <div class="card-subtitle">Rate-limited crawler (≥ 2.0s interval) + Bedrock Japanese Summarization</div>
+              </div>
+              <span class="pill-badge pill-teal">Template Mock</span>
+            </div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="field-group">
+                  <label class="field-label" for="keywordsInput">Search Keywords (comma separated)</label>
+                  <input class="form-input" id="keywordsInput" type="text" value="humanoid robot, bipedal locomotion, sim2real, imitation learning" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="maxPerKw">Max Papers per Keyword</label>
+                  <input class="form-input" id="maxPerKw" type="number" value="6" min="1" max="20" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2D Density Map + Paper Detail -->
+        <div class="row col-8-4" id="miningMapCard">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">2D Text Mining Density Map (ECharts 6)</div>
+                <div class="card-subtitle">Click any paper node to inspect its Japanese summary</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="chartMiningMap" class="echart-box-tall"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Paper Detail</div>
+              <span class="pill-badge pill-blue" id="detailPaperId">arXiv:2601.0412</span>
+            </div>
+            <div class="card-body">
+              <div class="paper-detail-box">
+                <div class="paper-detail-title" id="detailPaperTitle">Whole-Body Humanoid Locomotion via Diffusion-Guided DAPG and Sim2Real Domain Randomization</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <span class="pill-badge pill-teal" id="detailPaperCluster">Sim2Real / Locomotion</span>
+                  <span class="pill-badge pill-green" id="detailPaperYear">2026</span>
+                </div>
+                <div class="paper-detail-summary" id="detailPaperSummary">
+                  2足歩行ヒューマノイドの頑健な歩行制御に向けて、モーションキャプチャ由来のデモ方策をDAPGで正則化しつつ、MuJoCo上の摩擦・質量ランダム化により実機転移（Sim2Real）成功率を89%以上に向上させた手法を提案。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Yearly Trend + Top Terms -->
+        <div class="row col-2" id="trendCard">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Yearly Research Trend (2020–2026)</div>
+            </div>
+            <div class="card-body">
+              <div id="chartYearlyTrend" class="echart-box"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Top Extracted Terms</div>
+            </div>
+            <div class="card-body">
+              <div id="chartTopTerms" class="echart-box"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Papers Table -->
+        <div class="row col-1">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Indexed Papers</div>
+                <div class="card-subtitle">Filter by keyword or Sim2Real relevance</div>
+              </div>
+              <div class="filter-bar" style="margin-bottom:0">
+                <button type="button" class="filter-chip active" data-paper-filter="all">All</button>
+                <button type="button" class="filter-chip" data-paper-filter="sim2real">Sim2Real Only</button>
+              </div>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Title</th>
+                      <th>Cluster</th>
+                      <th>Year</th>
+                      <th>Sim2Real</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mockPapersTbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           PAGE 3: AI ADVISOR & TRAINING
+      ========================================================== -->
+      <section id="page-train" class="page-section">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div>
+              <div class="page-pretitle">Imitation &amp; Reinforcement Learning</div>
+              <h1 class="page-title">AI Advisor &amp; Training</h1>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-primary" type="button" id="btnStartMockTrain">Start Training Job</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gentelella v4 Stepper -->
+        <div class="row col-1">
+          <div class="card">
+            <div class="card-body">
+              <div class="stepper">
+                <div class="step done">
+                  <div class="num"><span>1</span></div>
+                  <div class="label">AI Advisor相談</div>
+                </div>
+                <div class="line done"></div>
+                <div class="step active">
+                  <div class="num"><span>2</span></div>
+                  <div class="label">手法・パラメータ設定</div>
+                </div>
+                <div class="line"></div>
+                <div class="step">
+                  <div class="num"><span>3</span></div>
+                  <div class="label">MuJoCo 3D/動画評価</div>
+                </div>
+                <div class="line"></div>
+                <div class="step">
+                  <div class="num"><span>4</span></div>
+                  <div class="label">AI再学習指示</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row col-4-8">
+          <!-- AI Advisor Chat -->
+          <div class="card" id="advisorCard">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Bedrock AI Advisor</div>
+                <div class="card-subtitle">Algorithm &amp; hyperparameter consultation</div>
+              </div>
+              <span class="pill-badge pill-purple">Claude</span>
+            </div>
+            <div class="card-body">
+              <div class="chat-log" id="advisorChatLog">
+                <div class="chat-msg assistant">
+                  <div class="chat-msg-meta">AI Advisor</div>
+                  2足歩行の安定化にはデモ方策とのKL/BC正則化が効く <strong>DAPG</strong>（<code>bc_weight=1.0</code>, <code>epochs=30</code>）を推奨します。
+                </div>
+              </div>
+              <div class="field-group" style="margin-bottom:10px">
+                <textarea class="form-textarea" id="advisorQuestionInput" placeholder="例: 転倒を減らしつつ歩幅を広げるにはどの手法が良いですか？"></textarea>
+              </div>
+              <button class="btn btn-outline" type="button" id="btnMockAskAdvisor" style="width:100%;justify-content:center">
+                Ask AI Advisor
+              </button>
+            </div>
+          </div>
+
+          <!-- Training Configuration -->
+          <div class="card" id="trainConfigCard">
+            <div class="card-header">
+              <div>
+                <div class="card-title">RL Training Configuration</div>
+                <div class="card-subtitle">Select DAPG / RLPD / AWAC and Mocap trajectory</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="algo-grid" id="algoSelector">
+                <button type="button" class="algo-card selected" data-algo="DAPG">
+                  <div class="algo-card-head">
+                    <span class="algo-name">DAPG</span>
+                    <span class="pill-badge pill-teal">Recommended</span>
+                  </div>
+                  <span class="algo-desc">Demo-augmented policy gradient. Fast convergence with Mocap priors.</span>
                 </button>
-                <button id="btnCancelRetrain" class="btn btn-secondary btn-sm">キャンセル</button>
+                <button type="button" class="algo-card" data-algo="RLPD">
+                  <div class="algo-card-head">
+                    <span class="algo-name">RLPD</span>
+                    <span class="pill-badge pill-blue">Off-Policy</span>
+                  </div>
+                  <span class="algo-desc">High sample efficiency mixing offline demos and online rollouts.</span>
+                </button>
+                <button type="button" class="algo-card" data-algo="AWAC">
+                  <div class="algo-card-head">
+                    <span class="algo-name">AWAC</span>
+                    <span class="pill-badge pill-purple">Conservative</span>
+                  </div>
+                  <span class="algo-desc">Advantage-weighted actor-critic for stable offline-to-online tuning.</span>
+                </button>
               </div>
 
-              <div id="evalTrainJobBanner" class="job-banner hidden" role="alert" aria-live="polite">
-                <div class="job-text" id="evalTrainJobText"></div>
-                <div class="progress-track" aria-hidden="true">
-                  <div class="progress-fill" id="evalTrainProgressFill" style="width: 10%"></div>
+              <div class="form-grid-3">
+                <div class="field-group">
+                  <label class="field-label" for="mocapSelect">Mocap Trajectory</label>
+                  <select class="form-select" id="mocapSelect">
+                    <option value="sample_biped_walk">sample_biped_walk (120 frames)</option>
+                    <option value="biped_sprint_v2">biped_sprint_v2 (180 frames)</option>
+                    <option value="terrain_step_up">terrain_step_up (150 frames)</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="epochsInput">Epochs</label>
+                  <input class="form-input" id="epochsInput" type="number" value="30" min="5" max="120" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="lrInput">Learning Rate</label>
+                  <input class="form-input" id="lrInput" type="text" value="0.0003" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="bcWeightInput">BC Weight</label>
+                  <input class="form-input" id="bcWeightInput" type="number" step="0.1" value="1.0" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="entropyInput">Entropy Coef</label>
+                  <input class="form-input" id="entropyInput" type="number" step="0.005" value="0.01" />
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="smoothInput">Smoothness Weight</label>
+                  <input class="form-input" id="smoothInput" type="number" step="0.01" value="0.06" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           PAGE 4: EVALUATION & 3D VIEWER
+      ========================================================== -->
+      <section id="page-eval" class="page-section">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div>
+              <div class="page-pretitle">MuJoCo Verification &amp; Loss Metrics</div>
+              <h1 class="page-title">Evaluation &amp; 3D</h1>
+            </div>
+            <div class="page-actions">
+              <button class="btn btn-outline" type="button" id="btnToggle3DPlay">Pause / Play 3D</button>
+              <button class="btn btn-primary" type="button" data-nav="train">Adjust &amp; Retrain</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row col-2">
+          <!-- Three.js 3D Skeleton Viewer -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Three.js 3D Humanoid Skeleton</div>
+                <div class="card-subtitle">Interactive bipedal gait replay</div>
+              </div>
+              <span class="pill-badge pill-green">60 FPS</span>
+            </div>
+            <div class="card-body">
+              <div class="stage-3d" id="threeStage">
+                <div class="stage-3d-overlay">
+                  <span class="stage-tag">DAPG #RUN-104</span>
+                  <span class="stage-tag" id="threeFrameTag">Frame 0 / 120</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Comparison Table Card -->
-          <div class="bento-card" style="margin-top: 14px;">
-            <div class="bento-card-header">
-              <h3>学習結果を比較</h3>
-              <span class="tip-icon" data-tip="行をクリックで該当レポートの3D/動画/グラフに切り替わります">?</span>
+          <!-- MuJoCo MP4 Evaluation Preview -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">MuJoCo MP4 Rollout Video</div>
+                <div class="card-subtitle">Physics engine contact &amp; balance check</div>
+              </div>
+              <span class="pill-badge pill-teal">S3 report/</span>
             </div>
-            <div class="table-wrap" tabindex="0" role="region" aria-label="学習結果比較一覧">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Run ID</th>
-                    <th>手法</th>
-                    <th>モーション</th>
-                    <th>Epochs</th>
-                    <th>成功率</th>
-                    <th>追随性</th>
-                    <th>滑らかさ</th>
-                    <th>Train / Val Loss</th>
-                    <th>過学習</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody id="reportsComparisonBody"></tbody>
-              </table>
+            <div class="card-body">
+              <div class="video-placeholder">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                <div style="font-weight:600;color:var(--text)">MuJoCo Rollout Video Preview</div>
+                <div style="font-size:12px">統合フェーズで <code>/api/jobs/{job_id}/video</code> のMP4ストリームに接続されます。</div>
+              </div>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
+
+        <!-- Loss & Success Rate Chart (ECharts 6) -->
+        <div class="row col-1">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Train / Val Loss &amp; Task Success Rate (ECharts 6)</div>
+                <div class="card-subtitle">Epoch-by-epoch convergence curve</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="chartEvalMetrics" class="echart-box-tall"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================================================
+           PAGE 5: SYSTEM & AWS INFRASTRUCTURE
+      ========================================================== -->
+      <section id="page-system" class="page-section">
+        <div class="page-header">
+          <div class="page-header-row">
+            <div>
+              <div class="page-pretitle">Cloud &amp; UI Configuration</div>
+              <h1 class="page-title">System &amp; AWS</h1>
+            </div>
+          </div>
+        </div>
+
+        <div class="row col-8-4">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">AWS Infrastructure (Osaka Region)</div>
+            </div>
+            <div class="card-body">
+              <div class="kv-grid">
+                <div class="kv-item">
+                  <div class="kv-label">AWS Region</div>
+                  <div class="kv-value">{{ aws_region }}</div>
+                </div>
+                <div class="kv-item">
+                  <div class="kv-label">S3 Bucket</div>
+                  <div class="kv-value">{{ s3_bucket }}</div>
+                </div>
+                <div class="kv-item">
+                  <div class="kv-label">Storage Lifecycle</div>
+                  <div class="kv-value">Intelligent-Tiering (10 Years Retention)</div>
+                </div>
+                <div class="kv-item">
+                  <div class="kv-label">S3 Prefixes</div>
+                  <div class="kv-value">papers/ · text_mining/ · mocap/ · report/</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Quick Settings</div>
+            </div>
+            <div class="card-body" style="padding:6px 16px">
+              <div class="toggle-row">
+                <div>
+                  <div class="label">Dark Mode</div>
+                  <div class="desc">Gentelella v4 dark palette</div>
+                </div>
+                <div class="toggle" id="settingsDarkToggle" role="switch" aria-checked="false" tabindex="0"></div>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="label">Compact Sidebar Rail</div>
+                  <div class="desc">64px icon-only rail mode</div>
+                </div>
+                <div class="toggle" id="settingsRailToggle" role="switch" aria-checked="false" tabindex="0"></div>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="label">Rate-Limit Guard</div>
+                  <div class="desc">alphaXiv ≥ 2.0s interval</div>
+                </div>
+                <div class="toggle on" role="switch" aria-checked="true" tabindex="0"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="footer">
+      <span>Physical AI Development System — Gentelella v4 UI Redesign</span>
+      <span>FastAPI · ECharts 6 · Three.js</span>
+    </footer>
+  </main>
+
+  <!-- Command Palette (Ctrl+K / Cmd+K) -->
+  <div class="cmdk-backdrop hidden" id="cmdkBackdrop" role="dialog" aria-modal="true" aria-label="Command Palette">
+    <div class="cmdk-dialog">
+      <div class="cmdk-input-wrap">
+        <svg class="cmdk-search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="7" cy="7" r="5" />
+          <path d="M11 11l3.5 3.5" />
+        </svg>
+        <input type="text" class="cmdk-input" id="cmdkInput" placeholder="ページ移動やコマンドを入力..." />
+        <span class="cmdk-esc">ESC</span>
+      </div>
+      <div class="cmdk-list" id="cmdkList"></div>
+      <div class="cmdk-footer">
+        <span><kbd>↑↓</kbd> 選択</span>
+        <span><kbd>Enter</kbd> 実行</span>
+        <span><kbd>ESC</kbd> 閉じる</span>
+      </div>
     </div>
   </div>
+
+  <!-- Toast Host -->
+  <div class="toast-host" id="toastHost" aria-live="polite"></div>
 </body>
 </html>
